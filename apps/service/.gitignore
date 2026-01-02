@@ -1,0 +1,10 @@
+# build and binary files
+build
+bin
+*.test
+
+
+
+# env files
+.env*
+!.env.example
