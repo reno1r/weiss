@@ -1,0 +1,27 @@
+set dotenv-load := true
+
+# Default recipe
+default:
+    @just --list
+
+# Run the service
+run:
+    go run ./cmd/api
+
+# Build the service
+build:
+    go build -o bin/api ./cmd/api
+
+# Run tests
+test:
+    go test ./...
+
+# Download dependencies
+deps:
+    go mod download
+    go mod tidy
+
+# Clean build artifacts
+clean:
+    rm -rf bin/ api
+
