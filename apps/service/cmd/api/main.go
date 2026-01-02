@@ -1,8 +1,17 @@
 package main
 
-import "github.com/reno1r/weiss/apps/service/internal/http"
+import (
+	"log"
+
+	"github.com/reno1r/weiss/apps/service/internal/config"
+)
 
 func main() {
-	server := http.NewServer()
-	server.Listen(":8080")
+	config, err := config.Load()
+
+	if err != nil {
+		log.Fatalf("Failed to load config: %v", err)
+	}
+
+	log.Println(config)
 }
