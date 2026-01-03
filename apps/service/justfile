@@ -25,13 +25,13 @@ deps:
 dev-deps:
     go install github.com/air-verse/air@latest
 
+# Start development with hot reload
 dev:
     air . 
 
 # Clean build artifacts
 clean:
-    rm -rf bin/ api
-
+    rm -rf bin/ api tmp
 
 # Start development environment
 docker-up:
