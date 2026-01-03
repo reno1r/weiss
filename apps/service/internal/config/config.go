@@ -7,6 +7,14 @@ type Config struct {
 	AppHost  string `mapstructure:"APP_HOST"`
 	AppPort  string `mapstructure:"APP_PORT"`
 	AppDebug bool   `mapstructure:"APP_DEBUG"`
+
+	DatabaseHost                string `mapstructure:"DB_HOST"`
+	DatabasePort                int    `mapstructure:"DB_PORT"`
+	DatabaseName                string `mapstructure:"DB_NAME"`
+	DatabaseUser                string `mapstructure:"DB_USER"`
+	DatabaseSSL                 string `mapstructure:"DB_SSL"`
+	DatabaseMaxConnections      int    `mapstructure:"DB_MAX_CONNECTIONS"`
+	DatabaseConnectionTimeoutMs int    `mapstructure:"DB_CoNNECTION_TIMEOUT_MS"`
 }
 
 var config *Config
