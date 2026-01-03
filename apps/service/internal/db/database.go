@@ -16,11 +16,11 @@ type Database struct {
 	config *config.Config
 }
 
-func NewDatabase(cfg *config.Config) (*Database, error) {
-	dsn := buildDSN(cfg)
+func NewDatabase(config *config.Config) (*Database, error) {
+	dsn := buildDSN(config)
 
 	gormConfig := &gorm.Config{
-		Logger: logger.Default.LogMode(getLogLevel(cfg.AppDebug)),
+		Logger: logger.Default.LogMode(getLogLevel(config.AppDebug)),
 	}
 
 	db, err := gorm.Open(postgres.Open(dsn), gormConfig)
@@ -33,12 +33,12 @@ func NewDatabase(cfg *config.Config) (*Database, error) {
 		return nil, fmt.Errorf("failed to get underlying sql.DB: %w", err)
 	}
 
-	if cfg.DatabaseMaxConnections > 0 {
-		sqlDB.SetMaxOpenConns(cfg.DatabaseMaxConnections)
-		sqlDB.SetMaxIdleConns(cfg.DatabaseMaxIdleConnections)
+	if config.DatabaseMaxConnections > 0 {
+		sqlDB.SetMaxOpenConns(config.DatabaseMaxConnections)
+		sqlDB.SetMaxIdleConns(config.DatabaseMaxIdleConnections)
 	}
 
-	timeout := time.Duration(cfg.DatabaseConnectionTimeoutMs) * time.Millisecond
+	timeout := time.Duration(config.DatabaseConnectionTimeoutMs) * time.Millisecond
 	if timeout > 0 {
 		sqlDB.SetConnMaxLifetime(timeout)
 	}
@@ -49,7 +49,7 @@ func NewDatabase(cfg *config.Config) (*Database, error) {
 
 	return &Database{
 		db:     db,
-		config: cfg,
+		config: config,
 	}, nil
 }
 
