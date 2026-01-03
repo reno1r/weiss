@@ -3,7 +3,8 @@ build
 bin
 *.test
 
-
+# tmp files
+tmp
 
 # env files
 .env*

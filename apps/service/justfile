@@ -21,6 +21,13 @@ deps:
     go mod download
     go mod tidy
 
+# Download development dependencies
+dev-deps:
+    go install github.com/air-verse/air@latest
+
+dev:
+    air . 
+
 # Clean build artifacts
 clean:
     rm -rf bin/ api
