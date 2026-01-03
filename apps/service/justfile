@@ -32,3 +32,43 @@ dev:
 clean:
     rm -rf bin/ api
 
+
+# Start development environment
+docker-up:
+    docker-compose up
+
+# Start development environment in detached mode
+docker-up-d:
+    docker-compose up -d
+
+# Stop development environment
+docker-down:
+    docker-compose down
+
+# Stop and remove volumes
+docker-down-v:
+    docker-compose down -v
+
+# View logs
+docker-logs:
+    docker-compose logs -f app
+
+# Build production Docker image
+docker-build:
+    docker build -t weiss-service:latest -f Dockerfile .
+
+# Build development Docker image
+docker-build-dev:
+    docker-compose build
+
+# Restart services
+docker-restart:
+    docker-compose restart
+
+# Execute command in app container
+docker-exec cmd:
+    docker-compose exec app {{cmd}}
+
+# Run tests in container
+docker-test:
+    docker-compose exec app go test ./...

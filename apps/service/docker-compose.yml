@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: weiss-service
+    ports:
+      - "8080:8080"
+      - "8090:8090"
+    volumes:
+      - .:/app
+      - /app/tmp
+      - /app/bin
+      - go-mod-cache:/go/pkg/mod
+    environment:
+      - APP_NAME=weiss
+      - APP_HOST=0.0.0.0
+      - APP_PORT=8080
+      - APP_DEBUG=true
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+    networks:
+      - weiss-network
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: weiss-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=weiss
+      - POSTGRES_PASSWORD=weiss
+      - POSTGRES_DB=weiss
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - weiss-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U weiss"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres-data:
+  go-mod-cache:
+
+networks:
+  weiss-network:
+    driver: bridge
