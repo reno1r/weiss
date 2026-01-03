@@ -15,6 +15,7 @@ type Config struct {
 	DatabasePassword            string `mapstructure:"DB_PASSWORD"`
 	DatabaseSSL                 string `mapstructure:"DB_SSL"`
 	DatabaseMaxConnections      int    `mapstructure:"DB_MAX_CONNECTIONS"`
+	DatabaseMaxIdleConnections  int    `mapstructure:"DB_MAX_IDLE_CONNECTIONS"`
 	DatabaseConnectionTimeoutMs int    `mapstructure:"DB_CoNNECTION_TIMEOUT_MS"`
 }
 
