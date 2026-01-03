@@ -12,6 +12,7 @@ type Config struct {
 	DatabasePort                int    `mapstructure:"DB_PORT"`
 	DatabaseName                string `mapstructure:"DB_NAME"`
 	DatabaseUser                string `mapstructure:"DB_USER"`
+	DatabasePassword            string `mapstructure:"DB_PASSWORD"`
 	DatabaseSSL                 string `mapstructure:"DB_SSL"`
 	DatabaseMaxConnections      int    `mapstructure:"DB_MAX_CONNECTIONS"`
 	DatabaseConnectionTimeoutMs int    `mapstructure:"DB_CoNNECTION_TIMEOUT_MS"`
