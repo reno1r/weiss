@@ -27,7 +27,7 @@ func setupRefreshTokenTest(t *testing.T) (*RefreshTokenUsecase, repositories.Use
 	tokenService, err := services.NewTokenService(config)
 	require.NoError(t, err)
 
-	refreshUsecase := NewRefreshTokenUsecase(userRepo, tokenService)
+	refreshUsecase := NewRefreshTokenUsecase(&userRepo, tokenService)
 
 	return refreshUsecase, userRepo, tokenService
 }
@@ -48,7 +48,7 @@ func TestRefreshTokenUsecase_Execute(t *testing.T) {
 		refreshToken, err := tokenService.GenerateRefreshToken(createdUser.ID, createdUser.Email, createdUser.Phone)
 		require.NoError(t, err)
 
-		req := RefreshTokenRequest{
+		req := RefreshTokenData{
 			RefreshToken: refreshToken,
 		}
 
@@ -75,7 +75,7 @@ func TestRefreshTokenUsecase_Execute(t *testing.T) {
 		refreshToken, err := tokenService.GenerateRefreshToken(createdUser.ID, createdUser.Email, createdUser.Phone)
 		require.NoError(t, err)
 
-		req := RefreshTokenRequest{
+		req := RefreshTokenData{
 			RefreshToken: refreshToken,
 		}
 
@@ -89,27 +89,27 @@ func TestRefreshTokenUsecase_Execute(t *testing.T) {
 	t.Run("returns error when refresh token is empty", func(t *testing.T) {
 		usecase, _, _ := setupRefreshTokenTest(t)
 
-		req := RefreshTokenRequest{
+		req := RefreshTokenData{
 			RefreshToken: "",
 		}
 
 		resp, err := usecase.Execute(req)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "refresh token is required")
-		assert.Zero(t, resp.User.ID)
+		assert.Nil(t, resp)
 	})
 
 	t.Run("returns error when refresh token is invalid", func(t *testing.T) {
 		usecase, _, _ := setupRefreshTokenTest(t)
 
-		req := RefreshTokenRequest{
+		req := RefreshTokenData{
 			RefreshToken: "invalid.token.here",
 		}
 
 		resp, err := usecase.Execute(req)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "failed to verify refresh token")
-		assert.Zero(t, resp.User.ID)
+		assert.Nil(t, resp)
 	})
 
 	t.Run("returns error when access token is used instead", func(t *testing.T) {
@@ -127,14 +127,14 @@ func TestRefreshTokenUsecase_Execute(t *testing.T) {
 		accessToken, err := tokenService.GenerateAccessToken(createdUser.ID, createdUser.Email, createdUser.Phone)
 		require.NoError(t, err)
 
-		req := RefreshTokenRequest{
+		req := RefreshTokenData{
 			RefreshToken: accessToken,
 		}
 
 		resp, err := usecase.Execute(req)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "failed to verify refresh token")
-		assert.Zero(t, resp.User.ID)
+		assert.Nil(t, resp)
 	})
 
 	t.Run("returns error when user not found", func(t *testing.T) {
@@ -143,14 +143,14 @@ func TestRefreshTokenUsecase_Execute(t *testing.T) {
 		refreshToken, err := tokenService.GenerateRefreshToken(999, "notfound@example.com", "9999999999")
 		require.NoError(t, err)
 
-		req := RefreshTokenRequest{
+		req := RefreshTokenData{
 			RefreshToken: refreshToken,
 		}
 
 		resp, err := usecase.Execute(req)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "user not found")
-		assert.Zero(t, resp.User.ID)
+		assert.Nil(t, resp)
 	})
 
 	t.Run("generates new token pair on refresh", func(t *testing.T) {
@@ -168,7 +168,7 @@ func TestRefreshTokenUsecase_Execute(t *testing.T) {
 		originalRefreshToken, err := tokenService.GenerateRefreshToken(createdUser.ID, createdUser.Email, createdUser.Phone)
 		require.NoError(t, err)
 
-		req := RefreshTokenRequest{
+		req := RefreshTokenData{
 			RefreshToken: originalRefreshToken,
 		}
 
@@ -194,13 +194,13 @@ func TestRefreshTokenUsecase_Execute(t *testing.T) {
 		refreshToken, err := tokenService.GenerateRefreshToken(1, "", "")
 		require.NoError(t, err)
 
-		req := RefreshTokenRequest{
+		req := RefreshTokenData{
 			RefreshToken: refreshToken,
 		}
 
 		resp, err := usecase.Execute(req)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "invalid token claims")
-		assert.Zero(t, resp.User.ID)
+		assert.Nil(t, resp)
 	})
 }
