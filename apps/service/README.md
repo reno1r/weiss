@@ -27,6 +27,35 @@ just docker-down  # Stop Docker environment
 just docker-logs # View logs
 ```
 
+## Migrations
+
+Database migrations are managed using [goose](https://github.com/pressly/goose).
+
+### Usage
+
+```bash
+# Create a new migration
+just migration-create add_users_table
+
+# Run migrations
+just migration-up
+
+# Rollback last migration
+just migration-down
+
+# Check migration status
+just migration-status
+```
+
+## Migration Files
+
+Migration files follow the naming pattern: `YYYYMMDDHHMMSS_name.sql`
+
+- Up migrations: SQL statements to apply changes
+- Down migrations: SQL statements to revert changes
+
+
+
 ## Docker
 
 Development: `docker-compose up`  

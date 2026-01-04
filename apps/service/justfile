@@ -24,6 +24,7 @@ deps:
 # Download development dependencies
 dev-deps:
     go install github.com/air-verse/air@latest
+    go install github.com/pressly/goose/v3/cmd/goose@latest
 
 # Start development with hot reload
 dev:
@@ -72,3 +73,36 @@ docker-exec cmd:
 # Run tests in container
 docker-test:
     docker-compose exec app go test ./...
+
+# Migration commands
+# Create a new migration file
+migration-create name:
+    goose -dir migrations create {{name}} sql
+
+# Run all pending migrations
+migration-up:
+    goose up
+
+# Rollback the last migration
+migration-down:
+    goose down
+
+# Rollback all migrations
+migration-reset:
+    goose reset
+
+# Show migration status
+migration-status:
+    goose status
+
+# Fix migration version (use with caution)
+migration-fix:
+    goose fix
+
+# Run migrations in Docker container
+migration-up-docker:
+    docker-compose exec app goose up
+
+# Check migration status in Docker
+migration-status-docker:
+    docker-compose exec app status
