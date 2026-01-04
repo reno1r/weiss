@@ -5,6 +5,7 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/reno1r/weiss/apps/service/internal/app/auth/usecases"
+	"github.com/reno1r/weiss/apps/service/internal/app/user/entities"
 )
 
 type LoginHandler struct {
@@ -17,14 +18,32 @@ func NewLoginHandler(loginUsecase *usecases.LoginUsecase) *LoginHandler {
 	}
 }
 
+type LoginPayload struct {
+	Email    string `json:"email"`
+	Phone    string `json:"phone"`
+	Password string `json:"password"`
+}
+
+type LoginResponse struct {
+	Data struct {
+		User         *entities.User `json:"user"`
+		AccessToken  string         `json:"access_token"`
+		RefreshToken string         `json:"refresh_token"`
+	} `json:"data"`
+}
+
 func (h *LoginHandler) Handle(c fiber.Ctx) error {
-	var credentials usecases.LoginCredential
+	var credentials LoginPayload
 
 	if err := c.Bind().Body(&credentials); err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "invalid request body")
 	}
 
-	response, err := h.loginUsecase.Execute(credentials)
+	response, err := h.loginUsecase.Execute(usecases.LoginData{
+		Email:    credentials.Email,
+		Phone:    credentials.Phone,
+		Password: credentials.Password,
+	})
 	if err != nil {
 		if isValidationError(err) {
 			return fiber.NewError(fiber.StatusUnprocessableEntity, err.Error())
@@ -35,15 +54,18 @@ func (h *LoginHandler) Handle(c fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusInternalServerError, "failed to process login request")
 	}
 
-	return c.JSON(fiber.Map{
-		"user": fiber.Map{
-			"id":        response.User.ID,
-			"full_name": response.User.FullName,
-			"phone":     response.User.Phone,
-			"email":     response.User.Email,
+	response.User.Password = ""
+
+	return c.JSON(LoginResponse{
+		Data: struct {
+			User         *entities.User `json:"user"`
+			AccessToken  string         `json:"access_token"`
+			RefreshToken string         `json:"refresh_token"`
+		}{
+			User:         response.User,
+			AccessToken:  response.AccessToken,
+			RefreshToken: response.RefreshToken,
 		},
-		"access_token":  response.AccessToken,
-		"refresh_token": response.RefreshToken,
 	})
 }
 
