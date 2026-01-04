@@ -107,16 +107,28 @@ func (s *Server) App() *fiber.App {
 
 func defaultErrorHandler(c fiber.Ctx, err error) error {
 	code := fiber.StatusInternalServerError
-	message := "Internal Server Error"
+	detail := "An internal server error occurred"
 
 	var fiberErr *fiber.Error
 	if errors.As(err, &fiberErr) {
 		code = fiberErr.Code
-		message = fiberErr.Message
+		if fiberErr.Message != "" {
+			detail = fiberErr.Message
+		}
 	}
 
-	return c.Status(code).JSON(fiber.Map{
-		"error": message,
-		"code":  code,
-	})
+	title := GetTitleForStatus(code)
+	if detail == "" {
+		detail = title
+	}
+
+	problem := NewProblemDetails(
+		code,
+		title,
+		detail,
+		GetInstanceFromPath(c.Path()),
+	)
+
+	c.Set(fiber.HeaderContentType, ContentTypeProblemJSON)
+	return c.Status(code).JSON(problem)
 }
