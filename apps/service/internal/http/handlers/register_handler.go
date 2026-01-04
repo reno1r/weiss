@@ -26,9 +26,12 @@ type RegisterPayload struct {
 }
 
 type RegisterResponse struct {
-	Data struct {
-		User *entities.User `json:"user"`
-	} `json:"data"`
+	Message string               `json:"message"`
+	Data    RegisterResponseData `json:"data"`
+}
+
+type RegisterResponseData struct {
+	User *entities.User `json:"user"`
 }
 
 func (h *RegisterHandler) Handle(c fiber.Ctx) error {
@@ -58,9 +61,8 @@ func (h *RegisterHandler) Handle(c fiber.Ctx) error {
 	result.User.Password = ""
 
 	return c.Status(fiber.StatusCreated).JSON(RegisterResponse{
-		Data: struct {
-			User *entities.User `json:"user"`
-		}{
+		Message: "user created successfully.",
+		Data: RegisterResponseData{
 			User: result.User,
 		},
 	})
