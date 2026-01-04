@@ -16,6 +16,32 @@ build:
 test:
     go test ./...
 
+# Run tests with verbose output
+test-verbose:
+    go test -v ./...
+
+# Run tests with coverage
+test-coverage:
+    go test -cover ./...
+
+# Run tests with coverage report
+test-coverage-html:
+    go test -coverprofile=coverage.out ./...
+    go tool cover -html=coverage.out -o coverage.html
+    @echo "Coverage report generated: coverage.html"
+
+# Run tests with race detector
+test-race:
+    go test -race ./...
+
+# Run tests for a specific package
+test-package package:
+    go test -v ./{{package}}
+
+# Run tests and show coverage percentage
+test-coverage-short:
+    go test -cover ./... | grep -E "(ok|FAIL)" | awk '{print $$NF}' | sed 's/coverage: //' | awk '{sum+=$1; count++} END {if (count>0) print "Total coverage: " sum/count "%"}'
+
 # Download dependencies
 deps:
     go mod download
@@ -32,7 +58,7 @@ dev:
 
 # Clean build artifacts
 clean:
-    rm -rf bin/ api tmp
+    rm -rf bin/ api tmp coverage.out coverage.html
 
 # Start development environment
 docker-up:
