@@ -132,3 +132,18 @@ migration-up-docker:
 # Check migration status in Docker
 migration-status-docker:
     docker-compose exec app status
+
+
+# Run e2e tests with testcontainers
+test-e2e:
+    go test -v -timeout 5m ./internal/e2e/...
+
+# Run e2e tests against live API (set E2E_LIVE_URL env var)
+test-e2e-live url="http://localhost:8080":
+    E2E_LIVE_URL={{url}} go test -v -timeout 5m ./internal/e2e/...
+
+# Run e2e tests with coverage
+test-e2e-coverage:
+    go test -v -timeout 5m -coverprofile=e2e-coverage.out ./internal/e2e/...
+    go tool cover -html=e2e-coverage.out -o e2e-coverage.html
+    @echo "E2E coverage report generated: e2e-coverage.html"
