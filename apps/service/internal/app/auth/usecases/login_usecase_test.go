@@ -105,9 +105,7 @@ func TestLoginUsecase_Execute(t *testing.T) {
 		resp, err := usecase.Execute(credentials)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "invalid credentials")
-		assert.Nil(t, resp.User)
-		assert.Empty(t, resp.AccessToken)
-		assert.Empty(t, resp.RefreshToken)
+		assert.Nil(t, resp)
 	})
 
 	t.Run("returns error when phone not found", func(t *testing.T) {
@@ -121,9 +119,7 @@ func TestLoginUsecase_Execute(t *testing.T) {
 		resp, err := usecase.Execute(credentials)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "invalid credentials")
-		assert.Nil(t, resp.User)
-		assert.Empty(t, resp.AccessToken)
-		assert.Empty(t, resp.RefreshToken)
+		assert.Nil(t, resp)
 	})
 
 	t.Run("returns error when password is incorrect", func(t *testing.T) {
@@ -150,9 +146,7 @@ func TestLoginUsecase_Execute(t *testing.T) {
 		resp, err := usecase.Execute(credentials)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "invalid credentials")
-		assert.Nil(t, resp.User)
-		assert.Empty(t, resp.AccessToken)
-		assert.Empty(t, resp.RefreshToken)
+		assert.Nil(t, resp)
 	})
 
 	t.Run("validates password is required", func(t *testing.T) {
@@ -166,9 +160,7 @@ func TestLoginUsecase_Execute(t *testing.T) {
 		resp, err := usecase.Execute(credentials)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "validation failed")
-		assert.Nil(t, resp.User)
-		assert.Empty(t, resp.AccessToken)
-		assert.Empty(t, resp.RefreshToken)
+		assert.Nil(t, resp)
 	})
 
 	t.Run("validates email format when provided", func(t *testing.T) {
@@ -182,9 +174,7 @@ func TestLoginUsecase_Execute(t *testing.T) {
 		resp, err := usecase.Execute(credentials)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "validation failed")
-		assert.Nil(t, resp.User)
-		assert.Empty(t, resp.AccessToken)
-		assert.Empty(t, resp.RefreshToken)
+		assert.Nil(t, resp)
 	})
 
 	t.Run("validates phone length when provided", func(t *testing.T) {
@@ -198,9 +188,7 @@ func TestLoginUsecase_Execute(t *testing.T) {
 		resp, err := usecase.Execute(credentials)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "validation failed")
-		assert.Nil(t, resp.User)
-		assert.Empty(t, resp.AccessToken)
-		assert.Empty(t, resp.RefreshToken)
+		assert.Nil(t, resp)
 	})
 
 	t.Run("returns error when both email and phone are empty", func(t *testing.T) {
@@ -215,9 +203,7 @@ func TestLoginUsecase_Execute(t *testing.T) {
 		resp, err := usecase.Execute(credentials)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "email or phone is required")
-		assert.Nil(t, resp.User)
-		assert.Empty(t, resp.AccessToken)
-		assert.Empty(t, resp.RefreshToken)
+		assert.Nil(t, resp)
 	})
 
 	t.Run("generates valid tokens", func(t *testing.T) {
