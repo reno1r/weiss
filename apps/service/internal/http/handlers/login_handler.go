@@ -5,7 +5,6 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/reno1r/weiss/apps/service/internal/app/auth/usecases"
-	"github.com/reno1r/weiss/apps/service/internal/app/user/entities"
 )
 
 type LoginHandler struct {
@@ -25,11 +24,13 @@ type LoginPayload struct {
 }
 
 type LoginResponse struct {
-	Data struct {
-		User         *entities.User `json:"user"`
-		AccessToken  string         `json:"access_token"`
-		RefreshToken string         `json:"refresh_token"`
-	} `json:"data"`
+	Message string            `json:"message"`
+	Data    LoginResponseData `json:"data"`
+}
+
+type LoginResponseData struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
 }
 
 func (h *LoginHandler) Handle(c fiber.Ctx) error {
@@ -54,15 +55,9 @@ func (h *LoginHandler) Handle(c fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusInternalServerError, "failed to process login request")
 	}
 
-	response.User.Password = ""
-
 	return c.JSON(LoginResponse{
-		Data: struct {
-			User         *entities.User `json:"user"`
-			AccessToken  string         `json:"access_token"`
-			RefreshToken string         `json:"refresh_token"`
-		}{
-			User:         response.User,
+		Message: "authorized.",
+		Data: LoginResponseData{
 			AccessToken:  response.AccessToken,
 			RefreshToken: response.RefreshToken,
 		},

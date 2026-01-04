@@ -30,7 +30,7 @@ func setupLoginTest(t *testing.T) (*LoginUsecase, repositories.UserRepository) {
 	tokenService, err := services.NewTokenService(config)
 	require.NoError(t, err)
 
-	loginUsecase := NewLoginUsecase(userRepo, tokenService, passwordService)
+	loginUsecase := NewLoginUsecase(&userRepo, tokenService, passwordService)
 
 	return loginUsecase, userRepo
 }

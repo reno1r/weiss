@@ -13,13 +13,13 @@ import (
 )
 
 type LoginUsecase struct {
-	userRepository  repositories.UserRepository
+	userRepository  *repositories.UserRepository
 	tokenService    *services.TokenService
 	passwordService *services.PasswordService
 	validator       *validator.Validate
 }
 
-func NewLoginUsecase(userRepository repositories.UserRepository, tokenService *services.TokenService, passwordService *services.PasswordService) *LoginUsecase {
+func NewLoginUsecase(userRepository *repositories.UserRepository, tokenService *services.TokenService, passwordService *services.PasswordService) *LoginUsecase {
 	return &LoginUsecase{
 		userRepository:  userRepository,
 		tokenService:    tokenService,
@@ -57,12 +57,12 @@ func (u *LoginUsecase) Execute(credentials LoginData) (*LoginResult, error) {
 	var err error
 
 	if credentials.Email != "" {
-		user, err = u.userRepository.FindByEmail(credentials.Email)
+		user, err = (*u.userRepository).FindByEmail(credentials.Email)
 		if err != nil {
 			return nil, errors.New("invalid credentials")
 		}
 	} else if credentials.Phone != "" {
-		user, err = u.userRepository.FindByPhone(credentials.Phone)
+		user, err = (*u.userRepository).FindByPhone(credentials.Phone)
 		if err != nil {
 			return nil, errors.New("invalid credentials")
 		}

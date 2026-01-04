@@ -102,8 +102,8 @@ func (s *Server) setupAuthRoutes() {
 		return
 	}
 
-	registerUsecase := usecases.NewRegisterUsecase(userRepo, passwordService)
-	loginUsecase := usecases.NewLoginUsecase(userRepo, tokenService, passwordService)
+	registerUsecase := usecases.NewRegisterUsecase(&userRepo, passwordService)
+	loginUsecase := usecases.NewLoginUsecase(&userRepo, tokenService, passwordService)
 
 	registerHandler := handlers.NewRegisterHandler(registerUsecase)
 	loginHandler := handlers.NewLoginHandler(loginUsecase)
