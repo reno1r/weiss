@@ -38,7 +38,7 @@ func (h *RegisterHandler) Handle(c fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "invalid request body")
 	}
 
-	user, err := h.registerUsecase.Execute(usecases.RegisterData{
+	result, err := h.registerUsecase.Execute(usecases.RegisterData{
 		FullName: request.FulllName,
 		Email:    request.Email,
 		Phone:    request.Phone,
@@ -55,13 +55,13 @@ func (h *RegisterHandler) Handle(c fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusInternalServerError, "failed to process registration request")
 	}
 
-	user.Password = ""
+	result.User.Password = ""
 
 	return c.Status(fiber.StatusCreated).JSON(RegisterResponse{
 		Data: struct {
 			User *entities.User `json:"user"`
 		}{
-			User: user,
+			User: result.User,
 		},
 	})
 }

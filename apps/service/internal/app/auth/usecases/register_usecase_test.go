@@ -41,16 +41,16 @@ func TestRegisterUsecase_Execute(t *testing.T) {
 
 		resp, err := usecase.Execute(req)
 		require.NoError(t, err)
-		assert.NotZero(t, resp.ID)
-		assert.Equal(t, "John Doe", resp.FullName)
-		assert.Equal(t, "1234567890", resp.Phone)
-		assert.Equal(t, "john@example.com", resp.Email)
-		assert.NotEqual(t, "password123", resp.Password)
-		assert.NotEmpty(t, resp.Password)
+		assert.NotZero(t, resp.User.ID)
+		assert.Equal(t, "John Doe", resp.User.FullName)
+		assert.Equal(t, "1234567890", resp.User.Phone)
+		assert.Equal(t, "john@example.com", resp.User.Email)
+		assert.NotEqual(t, "password123", resp.User.Password)
+		assert.NotEmpty(t, resp.User.Password)
 
 		verifyUser, err := userRepo.FindByEmail("john@example.com")
 		require.NoError(t, err)
-		assert.Equal(t, resp.ID, verifyUser.ID)
+		assert.Equal(t, resp.User.ID, verifyUser.ID)
 	})
 
 	t.Run("returns error when email already exists", func(t *testing.T) {

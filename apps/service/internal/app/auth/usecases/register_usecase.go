@@ -33,7 +33,11 @@ type RegisterData struct {
 	Password string `validate:"required,min=6,max=100"`
 }
 
-func (u *RegisterUsecase) Execute(req RegisterData) (*entities.User, error) {
+type RegisterResult struct {
+	User *entities.User
+}
+
+func (u *RegisterUsecase) Execute(req RegisterData) (*RegisterResult, error) {
 	if err := u.validator.Struct(req); err != nil {
 		var validationErrors []string
 		for _, err := range err.(validator.ValidationErrors) {
@@ -69,5 +73,7 @@ func (u *RegisterUsecase) Execute(req RegisterData) (*entities.User, error) {
 		return nil, fmt.Errorf("failed to create user: %w", err)
 	}
 
-	return &createdUser, nil
+	return &RegisterResult{
+		User: &createdUser,
+	}, nil
 }
