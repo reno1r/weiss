@@ -66,25 +66,39 @@ func (d *Database) Close() error {
 }
 
 func buildDSN(config *config.Config) string {
-	dsn := fmt.Sprintf(
-		"host=%s port=%d user=%s dbname=%s",
-		config.DatabaseHost,
-		config.DatabasePort,
-		config.DatabaseUser,
-		config.DatabaseName,
-	)
+	sslMode := normalizeSSLMode(config.DatabaseSSL)
 
 	if config.DatabasePassword != "" {
-		dsn += fmt.Sprintf(" password=%s", config.DatabasePassword)
+		return fmt.Sprintf(
+			"postgres://%s:%s@%s:%d/%s?sslmode=%s",
+			config.DatabaseUser,
+			config.DatabasePassword,
+			config.DatabaseHost,
+			config.DatabasePort,
+			config.DatabaseName,
+			sslMode,
+		)
 	}
 
-	if config.DatabaseSSL != "" {
-		dsn += fmt.Sprintf(" sslmode=%s", config.DatabaseSSL)
-	} else {
-		dsn += " sslmode=disable"
-	}
+	return fmt.Sprintf(
+		"postgres://%s@%s:%d/%s?sslmode=%s",
+		config.DatabaseUser,
+		config.DatabaseHost,
+		config.DatabasePort,
+		config.DatabaseName,
+		sslMode,
+	)
+}
 
-	return dsn
+func normalizeSSLMode(sslMode string) string {
+	switch sslMode {
+	case "", "false", "0", "no", "off":
+		return "disable"
+	case "true", "1", "yes", "on":
+		return "require"
+	default:
+		return sslMode
+	}
 }
 
 func getLogLevel(debug bool) logger.LogLevel {
