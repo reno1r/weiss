@@ -16,7 +16,14 @@ type Config struct {
 	DatabaseSSL                 string `mapstructure:"DB_SSL"`
 	DatabaseMaxConnections      int    `mapstructure:"DB_MAX_CONNECTIONS"`
 	DatabaseMaxIdleConnections  int    `mapstructure:"DB_MAX_IDLE_CONNECTIONS"`
-	DatabaseConnectionTimeoutMs int    `mapstructure:"DB_CoNNECTION_TIMEOUT_MS"`
+	DatabaseConnectionTimeoutMs int    `mapstructure:"DB_CONNECTION_TIMEOUT_MS"`
+
+	BcryptCost int `mapstructure:"BCRYPT_COST"`
+
+	JwtSecret         string `mapstructure:"JWT_SECRET"`
+	JwtIssuer         string `mapstructure:"JWT_ISSUER"`
+	JwtAccessExpires  string `mapstructure:"JWT_ACCESS_EXPIRES_IN"`
+	JwtRefreshExpires string `mapstructure:"JWT_REFRESH_EXPIRES_IN"`
 }
 
 var config *Config
