@@ -55,6 +55,8 @@ func (h *RegisterHandler) Handle(c fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusInternalServerError, "failed to process registration request")
 	}
 
+	user.Password = ""
+
 	return c.Status(fiber.StatusCreated).JSON(RegisterResponse{
 		Data: struct {
 			User *entities.User `json:"user"`
