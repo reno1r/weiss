@@ -65,21 +65,21 @@ func (d *Database) Close() error {
 	return sqlDB.Close()
 }
 
-func buildDSN(cfg *config.Config) string {
+func buildDSN(config *config.Config) string {
 	dsn := fmt.Sprintf(
 		"host=%s port=%d user=%s dbname=%s",
-		cfg.DatabaseHost,
-		cfg.DatabasePort,
-		cfg.DatabaseUser,
-		cfg.DatabaseName,
+		config.DatabaseHost,
+		config.DatabasePort,
+		config.DatabaseUser,
+		config.DatabaseName,
 	)
 
-	if cfg.DatabasePassword != "" {
-		dsn += fmt.Sprintf(" password=%s", cfg.DatabasePassword)
+	if config.DatabasePassword != "" {
+		dsn += fmt.Sprintf(" password=%s", config.DatabasePassword)
 	}
 
-	if cfg.DatabaseSSL != "" {
-		dsn += fmt.Sprintf(" sslmode=%s", cfg.DatabaseSSL)
+	if config.DatabaseSSL != "" {
+		dsn += fmt.Sprintf(" sslmode=%s", config.DatabaseSSL)
 	} else {
 		dsn += " sslmode=disable"
 	}
