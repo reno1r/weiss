@@ -13,12 +13,12 @@ import (
 )
 
 type RegisterUsecase struct {
-	userRepository  repositories.UserRepository
+	userRepository  *repositories.UserRepository
 	passwordService *services.PasswordService
 	validator       *validator.Validate
 }
 
-func NewRegisterUsecase(userRepository repositories.UserRepository, passwordService *services.PasswordService) *RegisterUsecase {
+func NewRegisterUsecase(userRepository *repositories.UserRepository, passwordService *services.PasswordService) *RegisterUsecase {
 	return &RegisterUsecase{
 		userRepository:  userRepository,
 		passwordService: passwordService,
@@ -26,39 +26,35 @@ func NewRegisterUsecase(userRepository repositories.UserRepository, passwordServ
 	}
 }
 
-type RegisterRequest struct {
+type RegisterData struct {
 	FullName string `validate:"required,min=2,max=255"`
 	Phone    string `validate:"required,min=10,max=20"`
 	Email    string `validate:"required,email"`
 	Password string `validate:"required,min=6,max=100"`
 }
 
-type RegisterResponse struct {
-	User entities.User
-}
-
-func (u *RegisterUsecase) Execute(req RegisterRequest) (RegisterResponse, error) {
+func (u *RegisterUsecase) Execute(req RegisterData) (*entities.User, error) {
 	if err := u.validator.Struct(req); err != nil {
 		var validationErrors []string
 		for _, err := range err.(validator.ValidationErrors) {
 			validationErrors = append(validationErrors, validationutil.GetValidationErrorMessage(err))
 		}
-		return RegisterResponse{}, fmt.Errorf("validation failed: %s", strings.Join(validationErrors, ", "))
+		return nil, fmt.Errorf("validation failed: %s", strings.Join(validationErrors, ", "))
 	}
 
-	_, err := u.userRepository.FindByEmail(req.Email)
+	_, err := (*u.userRepository).FindByEmail(req.Email)
 	if err == nil {
-		return RegisterResponse{}, errors.New("user with this email already exists")
+		return nil, errors.New("user with this email already exists")
 	}
 
-	_, err = u.userRepository.FindByPhone(req.Phone)
+	_, err = (*u.userRepository).FindByPhone(req.Phone)
 	if err == nil {
-		return RegisterResponse{}, errors.New("user with this phone already exists")
+		return nil, errors.New("user with this phone already exists")
 	}
 
 	hashedPassword, err := u.passwordService.HashPassword(req.Password)
 	if err != nil {
-		return RegisterResponse{}, fmt.Errorf("failed to hash password: %w", err)
+		return nil, fmt.Errorf("failed to hash password: %w", err)
 	}
 
 	user := entities.User{
@@ -68,12 +64,10 @@ func (u *RegisterUsecase) Execute(req RegisterRequest) (RegisterResponse, error)
 		Password: hashedPassword,
 	}
 
-	createdUser, err := u.userRepository.Create(user)
+	createdUser, err := (*u.userRepository).Create(user)
 	if err != nil {
-		return RegisterResponse{}, fmt.Errorf("failed to create user: %w", err)
+		return nil, fmt.Errorf("failed to create user: %w", err)
 	}
 
-	return RegisterResponse{
-		User: createdUser,
-	}, nil
+	return &createdUser, nil
 }

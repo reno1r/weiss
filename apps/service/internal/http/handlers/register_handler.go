@@ -5,6 +5,7 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/reno1r/weiss/apps/service/internal/app/auth/usecases"
+	"github.com/reno1r/weiss/apps/service/internal/app/user/entities"
 )
 
 type RegisterHandler struct {
@@ -17,14 +18,33 @@ func NewRegisterHandler(registerUsecase *usecases.RegisterUsecase) *RegisterHand
 	}
 }
 
+type RegisterPayload struct {
+	FulllName string `json:"full_name"`
+	Email     string `json:"email"`
+	Phone     string `json:"phone"`
+	Password  string `json:"password"`
+}
+
+type RegisterResponse struct {
+	Data struct {
+		User *entities.User `json:"user"`
+	} `json:"data"`
+}
+
 func (h *RegisterHandler) Handle(c fiber.Ctx) error {
-	var request usecases.RegisterRequest
+	var request RegisterPayload
 
 	if err := c.Bind().Body(&request); err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "invalid request body")
 	}
 
-	response, err := h.registerUsecase.Execute(request)
+	user, err := h.registerUsecase.Execute(usecases.RegisterData{
+		FullName: request.FulllName,
+		Email:    request.Email,
+		Phone:    request.Phone,
+		Password: request.Password,
+	})
+
 	if err != nil {
 		if isValidationError(err) {
 			return fiber.NewError(fiber.StatusUnprocessableEntity, err.Error())
@@ -35,12 +55,11 @@ func (h *RegisterHandler) Handle(c fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusInternalServerError, "failed to process registration request")
 	}
 
-	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
-		"user": fiber.Map{
-			"id":        response.User.ID,
-			"full_name": response.User.FullName,
-			"phone":     response.User.Phone,
-			"email":     response.User.Email,
+	return c.Status(fiber.StatusCreated).JSON(RegisterResponse{
+		Data: struct {
+			User *entities.User `json:"user"`
+		}{
+			User: user,
 		},
 	})
 }
