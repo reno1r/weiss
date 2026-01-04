@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v3"
@@ -62,14 +63,7 @@ func (s *Server) setupMiddleware() {
 
 	s.app.Use(helmet.New())
 
-	s.app.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"*"},
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
-		ExposeHeaders:    []string{"Content-Length"},
-		AllowCredentials: true,
-		MaxAge:           3600,
-	}))
+	s.app.Use(cors.New(s.getCorsConfig()))
 
 	s.app.Use(compress.New(compress.Config{
 		Level: compress.LevelBestSpeed,
@@ -103,6 +97,46 @@ func (s *Server) Stop() error {
 
 func (s *Server) App() *fiber.App {
 	return s.app
+}
+
+func (s *Server) getCorsConfig() cors.Config {
+	allowedOrigins := s.parseCorsOrigins()
+	allowCredentials := true
+
+	if len(allowedOrigins) == 1 && allowedOrigins[0] == "*" {
+		allowCredentials = false
+	}
+
+	return cors.Config{
+		AllowOrigins:     allowedOrigins,
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: allowCredentials,
+		MaxAge:           3600,
+	}
+}
+
+func (s *Server) parseCorsOrigins() []string {
+	if s.config.CorsAllowedOrigins == "" {
+		return []string{"*"}
+	}
+
+	origins := strings.Split(s.config.CorsAllowedOrigins, ",")
+	result := make([]string, 0, len(origins))
+
+	for _, origin := range origins {
+		trimmed := strings.TrimSpace(origin)
+		if trimmed != "" {
+			result = append(result, trimmed)
+		}
+	}
+
+	if len(result) == 0 {
+		return []string{"*"}
+	}
+
+	return result
 }
 
 func defaultErrorHandler(c fiber.Ctx, err error) error {
