@@ -18,7 +18,8 @@ type Config struct {
 	DatabaseMaxIdleConnections  int    `mapstructure:"DB_MAX_IDLE_CONNECTIONS"`
 	DatabaseConnectionTimeoutMs int    `mapstructure:"DB_CONNECTION_TIMEOUT_MS"`
 
-	BcryptCost int `mapstructure:"BCRYPT_COST"`
+	BcryptCost         int    `mapstructure:"BCRYPT_COST"`
+	CorsAllowedOrigins string `mapstructure:"CORS_ALLOWED_ORIGINS"`
 
 	JwtSecret         string `mapstructure:"JWT_SECRET"`
 	JwtIssuer         string `mapstructure:"JWT_ISSUER"`
