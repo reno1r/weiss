@@ -14,15 +14,22 @@ import (
 	"github.com/gofiber/fiber/v3/middleware/idempotency"
 	"github.com/gofiber/fiber/v3/middleware/logger"
 	"github.com/gofiber/fiber/v3/middleware/recover"
+	"gorm.io/gorm"
+
+	"github.com/reno1r/weiss/apps/service/internal/app/auth/services"
+	"github.com/reno1r/weiss/apps/service/internal/app/auth/usecases"
+	"github.com/reno1r/weiss/apps/service/internal/app/user/repositories"
 	"github.com/reno1r/weiss/apps/service/internal/config"
+	"github.com/reno1r/weiss/apps/service/internal/http/handlers"
 )
 
 type Server struct {
 	app    *fiber.App
 	config *config.Config
+	db     *gorm.DB
 }
 
-func NewServer(config *config.Config) *Server {
+func NewServer(config *config.Config, db *gorm.DB) *Server {
 	server := &Server{
 		app: fiber.New(fiber.Config{
 			AppName:         config.AppName,
@@ -42,6 +49,7 @@ func NewServer(config *config.Config) *Server {
 			ProxyHeader: fiber.HeaderXForwardedFor,
 		}),
 		config: config,
+		db:     db,
 	}
 
 	server.setupMiddleware()
@@ -79,6 +87,29 @@ func (s *Server) setupRoutes() {
 			"service": s.config.AppName,
 		})
 	})
+
+	s.setupAuthRoutes()
+
+}
+
+func (s *Server) setupAuthRoutes() {
+	userRepo := repositories.NewUserRepository(s.db)
+
+	passwordService := services.NewPasswordService(s.config)
+	tokenService, err := services.NewTokenService(s.config)
+
+	if err != nil {
+		return
+	}
+
+	registerUsecase := usecases.NewRegisterUsecase(userRepo, passwordService)
+	loginUsecase := usecases.NewLoginUsecase(userRepo, tokenService, passwordService)
+
+	registerHandler := handlers.NewRegisterHandler(registerUsecase)
+	loginHandler := handlers.NewLoginHandler(loginUsecase)
+
+	s.app.Post("/api/auth/register", registerHandler.Handle)
+	s.app.Post("/api/auth/login", loginHandler.Handle)
 }
 
 func (s *Server) Start() error {
