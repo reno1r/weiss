@@ -1,4 +1,4 @@
-package validation_util
+package validationutil
 
 import (
 	"fmt"

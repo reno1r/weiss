@@ -10,11 +10,11 @@ import (
 )
 
 type RefreshTokenUsecase struct {
-	userRepository *repositories.UserRepository
+	userRepository repositories.UserRepository
 	tokenService   *services.TokenService
 }
 
-func NewRefreshTokenUsecase(userRepository *repositories.UserRepository, tokenService *services.TokenService) *RefreshTokenUsecase {
+func NewRefreshTokenUsecase(userRepository repositories.UserRepository, tokenService *services.TokenService) *RefreshTokenUsecase {
 	return &RefreshTokenUsecase{
 		userRepository: userRepository,
 		tokenService:   tokenService,
@@ -53,9 +53,9 @@ func (u *RefreshTokenUsecase) Execute(req RefreshTokenData) (*RefreshTokenResult
 
 	var user entities.User
 	if claims.Email != "" {
-		user, err = (*u.userRepository).FindByEmail(claims.Email)
+		user, err = u.userRepository.FindByEmail(claims.Email)
 	} else if claims.Phone != "" {
-		user, err = (*u.userRepository).FindByPhone(claims.Phone)
+		user, err = u.userRepository.FindByPhone(claims.Phone)
 	} else {
 		return nil, errors.New("invalid token claims")
 	}

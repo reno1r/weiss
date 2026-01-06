@@ -11,7 +11,7 @@ import (
 	"github.com/reno1r/weiss/apps/service/internal/app/user/entities"
 	"github.com/reno1r/weiss/apps/service/internal/app/user/repositories"
 	"github.com/reno1r/weiss/apps/service/internal/config"
-	testutil "github.com/reno1r/weiss/apps/service/internal/test_util"
+	"github.com/reno1r/weiss/apps/service/internal/testutil"
 )
 
 func setupLoginTest(t *testing.T) (*LoginUsecase, repositories.UserRepository) {
@@ -30,7 +30,7 @@ func setupLoginTest(t *testing.T) (*LoginUsecase, repositories.UserRepository) {
 	tokenService, err := services.NewTokenService(config)
 	require.NoError(t, err)
 
-	loginUsecase := NewLoginUsecase(&userRepo, tokenService, passwordService)
+	loginUsecase := NewLoginUsecase(userRepo, tokenService, passwordService)
 
 	return loginUsecase, userRepo
 }

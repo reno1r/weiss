@@ -11,7 +11,7 @@ import (
 	"github.com/reno1r/weiss/apps/service/internal/app/user/entities"
 	"github.com/reno1r/weiss/apps/service/internal/app/user/repositories"
 	"github.com/reno1r/weiss/apps/service/internal/config"
-	testutil "github.com/reno1r/weiss/apps/service/internal/test_util"
+	"github.com/reno1r/weiss/apps/service/internal/testutil"
 )
 
 func setupRegisterTest(t *testing.T) (*RegisterUsecase, repositories.UserRepository) {
@@ -23,7 +23,7 @@ func setupRegisterTest(t *testing.T) (*RegisterUsecase, repositories.UserReposit
 	}
 	passwordService := services.NewPasswordService(config)
 
-	registerUsecase := NewRegisterUsecase(&userRepo, passwordService)
+	registerUsecase := NewRegisterUsecase(userRepo, passwordService)
 
 	return registerUsecase, userRepo
 }

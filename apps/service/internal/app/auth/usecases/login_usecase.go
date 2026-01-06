@@ -9,17 +9,17 @@ import (
 	"github.com/reno1r/weiss/apps/service/internal/app/auth/services"
 	"github.com/reno1r/weiss/apps/service/internal/app/user/entities"
 	"github.com/reno1r/weiss/apps/service/internal/app/user/repositories"
-	validationutil "github.com/reno1r/weiss/apps/service/internal/validation_util"
+	"github.com/reno1r/weiss/apps/service/internal/validationutil"
 )
 
 type LoginUsecase struct {
-	userRepository  *repositories.UserRepository
+	userRepository  repositories.UserRepository
 	tokenService    *services.TokenService
 	passwordService *services.PasswordService
 	validator       *validator.Validate
 }
 
-func NewLoginUsecase(userRepository *repositories.UserRepository, tokenService *services.TokenService, passwordService *services.PasswordService) *LoginUsecase {
+func NewLoginUsecase(userRepository repositories.UserRepository, tokenService *services.TokenService, passwordService *services.PasswordService) *LoginUsecase {
 	return &LoginUsecase{
 		userRepository:  userRepository,
 		tokenService:    tokenService,
@@ -57,12 +57,12 @@ func (u *LoginUsecase) Execute(credentials LoginData) (*LoginResult, error) {
 	var err error
 
 	if credentials.Email != "" {
-		user, err = (*u.userRepository).FindByEmail(credentials.Email)
+		user, err = u.userRepository.FindByEmail(credentials.Email)
 		if err != nil {
 			return nil, errors.New("invalid credentials")
 		}
 	} else if credentials.Phone != "" {
-		user, err = (*u.userRepository).FindByPhone(credentials.Phone)
+		user, err = u.userRepository.FindByPhone(credentials.Phone)
 		if err != nil {
 			return nil, errors.New("invalid credentials")
 		}

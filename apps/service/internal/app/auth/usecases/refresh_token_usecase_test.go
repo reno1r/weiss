@@ -10,7 +10,7 @@ import (
 	"github.com/reno1r/weiss/apps/service/internal/app/user/entities"
 	"github.com/reno1r/weiss/apps/service/internal/app/user/repositories"
 	"github.com/reno1r/weiss/apps/service/internal/config"
-	testutil "github.com/reno1r/weiss/apps/service/internal/test_util"
+	"github.com/reno1r/weiss/apps/service/internal/testutil"
 )
 
 func setupRefreshTokenTest(t *testing.T) (*RefreshTokenUsecase, repositories.UserRepository, *services.TokenService) {
@@ -27,7 +27,7 @@ func setupRefreshTokenTest(t *testing.T) (*RefreshTokenUsecase, repositories.Use
 	tokenService, err := services.NewTokenService(config)
 	require.NoError(t, err)
 
-	refreshUsecase := NewRefreshTokenUsecase(&userRepo, tokenService)
+	refreshUsecase := NewRefreshTokenUsecase(userRepo, tokenService)
 
 	return refreshUsecase, userRepo, tokenService
 }

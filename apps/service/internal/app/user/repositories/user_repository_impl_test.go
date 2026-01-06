@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/reno1r/weiss/apps/service/internal/app/user/entities"
-	testutil "github.com/reno1r/weiss/apps/service/internal/test_util"
+	"github.com/reno1r/weiss/apps/service/internal/testutil"
 )
 
 func TestUserRepository_All(t *testing.T) {

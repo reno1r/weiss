@@ -9,16 +9,16 @@ import (
 	"github.com/reno1r/weiss/apps/service/internal/app/auth/services"
 	"github.com/reno1r/weiss/apps/service/internal/app/user/entities"
 	"github.com/reno1r/weiss/apps/service/internal/app/user/repositories"
-	validationutil "github.com/reno1r/weiss/apps/service/internal/validation_util"
+	"github.com/reno1r/weiss/apps/service/internal/validationutil"
 )
 
 type RegisterUsecase struct {
-	userRepository  *repositories.UserRepository
+	userRepository  repositories.UserRepository
 	passwordService *services.PasswordService
 	validator       *validator.Validate
 }
 
-func NewRegisterUsecase(userRepository *repositories.UserRepository, passwordService *services.PasswordService) *RegisterUsecase {
+func NewRegisterUsecase(userRepository repositories.UserRepository, passwordService *services.PasswordService) *RegisterUsecase {
 	return &RegisterUsecase{
 		userRepository:  userRepository,
 		passwordService: passwordService,
@@ -46,12 +46,12 @@ func (u *RegisterUsecase) Execute(req RegisterData) (*RegisterResult, error) {
 		return nil, fmt.Errorf("validation failed: %s", strings.Join(validationErrors, ", "))
 	}
 
-	_, err := (*u.userRepository).FindByEmail(req.Email)
+	_, err := u.userRepository.FindByEmail(req.Email)
 	if err == nil {
 		return nil, errors.New("user with this email already exists")
 	}
 
-	_, err = (*u.userRepository).FindByPhone(req.Phone)
+	_, err = u.userRepository.FindByPhone(req.Phone)
 	if err == nil {
 		return nil, errors.New("user with this phone already exists")
 	}
@@ -68,7 +68,7 @@ func (u *RegisterUsecase) Execute(req RegisterData) (*RegisterResult, error) {
 		Password: hashedPassword,
 	}
 
-	createdUser, err := (*u.userRepository).Create(user)
+	createdUser, err := u.userRepository.Create(user)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create user: %w", err)
 	}
