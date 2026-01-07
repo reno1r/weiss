@@ -10,7 +10,7 @@ run:
 
 # Build the service
 build:
-    go build -o bin/api ./cmd/api
+    go build -o build/api/bin ./cmd/api
 
 # Run tests
 test:
@@ -58,7 +58,7 @@ dev:
 
 # Clean build artifacts
 clean:
-    rm -rf bin/ api tmp coverage.out coverage.html
+    rm -rf build/ api tmp coverage.out coverage.html
 
 # Start development environment
 docker-up:
