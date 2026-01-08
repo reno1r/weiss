@@ -18,6 +18,8 @@ import (
 
 	"github.com/reno1r/weiss/apps/service/internal/app/auth/services"
 	"github.com/reno1r/weiss/apps/service/internal/app/auth/usecases"
+	shopusecases "github.com/reno1r/weiss/apps/service/internal/app/shop/usecases"
+	shoprepositories "github.com/reno1r/weiss/apps/service/internal/app/shop/repositories"
 	"github.com/reno1r/weiss/apps/service/internal/app/user/repositories"
 	"github.com/reno1r/weiss/apps/service/internal/config"
 	"github.com/reno1r/weiss/apps/service/internal/http/handlers"
@@ -89,6 +91,7 @@ func (s *Server) setupRoutes() {
 	})
 
 	s.setupAuthRoutes()
+	s.setupShopRoutes()
 
 }
 
@@ -110,6 +113,30 @@ func (s *Server) setupAuthRoutes() {
 
 	s.app.Post("/api/auth/register", registerHandler.Handle)
 	s.app.Post("/api/auth/login", loginHandler.Handle)
+}
+
+func (s *Server) setupShopRoutes() {
+	shopRepo := shoprepositories.NewShopRepository(s.db)
+
+	listShopsUsecase := shopusecases.NewListShopsUsecase(shopRepo)
+	getShopUsecase := shopusecases.NewGetShopUsecase(shopRepo)
+	createShopUsecase := shopusecases.NewCreateShopUsecase(shopRepo)
+	updateShopUsecase := shopusecases.NewUpdateShopUsecase(shopRepo)
+	deleteShopUsecase := shopusecases.NewDeleteShopUsecase(shopRepo)
+
+	shopHandler := handlers.NewShopHandler(
+		listShopsUsecase,
+		getShopUsecase,
+		createShopUsecase,
+		updateShopUsecase,
+		deleteShopUsecase,
+	)
+
+	s.app.Get("/api/shops", shopHandler.ListShops)
+	s.app.Get("/api/shops/:id", shopHandler.GetShop)
+	s.app.Post("/api/shops", shopHandler.CreateShop)
+	s.app.Put("/api/shops/:id", shopHandler.UpdateShop)
+	s.app.Delete("/api/shops/:id", shopHandler.DeleteShop)
 }
 
 func (s *Server) Start() error {
