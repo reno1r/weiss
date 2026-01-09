@@ -14,6 +14,7 @@ import (
 	"github.com/gofiber/fiber/v3/middleware/idempotency"
 	"github.com/gofiber/fiber/v3/middleware/logger"
 	"github.com/gofiber/fiber/v3/middleware/recover"
+	"github.com/gofiber/swagger/v2"
 	"gorm.io/gorm"
 
 	_ "github.com/reno1r/weiss/apps/service/docs/swagger"
@@ -144,39 +145,7 @@ func (s *Server) setupShopRoutes() {
 }
 
 func (s *Server) setupSwaggerRoutes() {
-	s.app.Get("/swagger.json", func(c fiber.Ctx) error {
-		return c.SendFile("./docs/swagger.json")
-	})
-
-	s.app.Get("/swagger.yaml", func(c fiber.Ctx) error {
-		return c.SendFile("./docs/swagger.yaml")
-	})
-
-	s.app.Get("/swagger", func(c fiber.Ctx) error {
-		return c.SendString(`<!DOCTYPE html>
-<html>
-<head>
-    <title>Swagger UI</title>
-    <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@5.17.14/swagger-ui.css" />
-</head>
-<body>
-    <div id="swagger-ui"></div>
-    <script src="https://unpkg.com/swagger-ui-dist@5.17.14/swagger-ui-bundle.js"></script>
-    <script>
-        window.onload = function() {
-            SwaggerUIBundle({
-                url: "/swagger.json",
-                dom_id: '#swagger-ui',
-                presets: [
-                    SwaggerUIBundle.presets.apis,
-                    SwaggerUIBundle.presets.standalone
-                ]
-            });
-        };
-    </script>
-</body>
-</html>`)
-	})
+	s.app.Get("/swagger/*", swagger.HandlerDefault)
 }
 
 func (s *Server) Start() error {
