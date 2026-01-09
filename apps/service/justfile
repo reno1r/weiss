@@ -51,10 +51,16 @@ deps:
 dev-deps:
     go install github.com/air-verse/air@latest
     go install github.com/pressly/goose/v3/cmd/goose@latest
+    go install github.com/swaggo/swag/cmd/swag@latest
 
 # Start development with hot reload
 dev:
-    air . 
+    air .
+
+# Generate Swagger documentation
+swagger:
+    swag init -g cmd/api/main.go -o ./docs
+    @echo "Swagger documentation generated in ./docs" 
 
 # Clean build artifacts
 clean:

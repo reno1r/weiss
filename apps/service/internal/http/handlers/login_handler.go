@@ -18,9 +18,9 @@ func NewLoginHandler(loginUsecase *usecases.LoginUsecase) *LoginHandler {
 }
 
 type LoginPayload struct {
-	Email    string `json:"email"`
-	Phone    string `json:"phone"`
-	Password string `json:"password"`
+	Email    string `json:"email" example:"john@example.com"` // User's email address (optional if phone is provided)
+	Phone    string `json:"phone" example:"1234567890"` // User's phone number (optional if email is provided)
+	Password string `json:"password" example:"password123" binding:"required"` // User's password
 }
 
 type LoginResponse struct {
@@ -33,6 +33,19 @@ type LoginResponseData struct {
 	RefreshToken string `json:"refresh_token"`
 }
 
+// Login godoc
+// @Summary      Login user
+// @Description  Authenticate user with email/phone and password, returns JWT tokens
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        credentials  body      LoginPayload  true  "Login credentials"
+// @Success      200         {object}  LoginResponse
+// @Failure      400         {object}  map[string]string  "Invalid request body"
+// @Failure      401         {object}  map[string]string  "Invalid credentials"
+// @Failure      422         {object}  map[string]string  "Validation failed"
+// @Failure      500         {object}  map[string]string  "Internal server error"
+// @Router       /auth/login [post]
 func (h *LoginHandler) Handle(c fiber.Ctx) error {
 	var credentials LoginPayload
 

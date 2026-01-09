@@ -16,6 +16,8 @@ import (
 	"github.com/gofiber/fiber/v3/middleware/recover"
 	"gorm.io/gorm"
 
+	_ "github.com/reno1r/weiss/apps/service/docs"
+
 	"github.com/reno1r/weiss/apps/service/internal/app/auth/services"
 	"github.com/reno1r/weiss/apps/service/internal/app/auth/usecases"
 	shopusecases "github.com/reno1r/weiss/apps/service/internal/app/shop/usecases"
@@ -90,6 +92,8 @@ func (s *Server) setupRoutes() {
 		})
 	})
 
+	s.setupSwaggerRoutes()
+
 	s.setupAuthRoutes()
 	s.setupShopRoutes()
 
@@ -137,6 +141,42 @@ func (s *Server) setupShopRoutes() {
 	s.app.Post("/api/shops", shopHandler.CreateShop)
 	s.app.Put("/api/shops/:id", shopHandler.UpdateShop)
 	s.app.Delete("/api/shops/:id", shopHandler.DeleteShop)
+}
+
+func (s *Server) setupSwaggerRoutes() {
+	s.app.Get("/swagger.json", func(c fiber.Ctx) error {
+		return c.SendFile("./docs/swagger.json")
+	})
+
+	s.app.Get("/swagger.yaml", func(c fiber.Ctx) error {
+		return c.SendFile("./docs/swagger.yaml")
+	})
+
+	s.app.Get("/swagger", func(c fiber.Ctx) error {
+		return c.SendString(`<!DOCTYPE html>
+<html>
+<head>
+    <title>Swagger UI</title>
+    <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@5.17.14/swagger-ui.css" />
+</head>
+<body>
+    <div id="swagger-ui"></div>
+    <script src="https://unpkg.com/swagger-ui-dist@5.17.14/swagger-ui-bundle.js"></script>
+    <script>
+        window.onload = function() {
+            SwaggerUIBundle({
+                url: "/swagger.json",
+                dom_id: '#swagger-ui',
+                presets: [
+                    SwaggerUIBundle.presets.apis,
+                    SwaggerUIBundle.presets.standalone
+                ]
+            });
+        };
+    </script>
+</body>
+</html>`)
+	})
 }
 
 func (s *Server) Start() error {
