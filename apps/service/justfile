@@ -59,8 +59,8 @@ dev:
 
 # Generate Swagger documentation
 swagger:
-    swag init -g cmd/api/main.go -o ./docs
-    @echo "Swagger documentation generated in ./docs" 
+    swag init -g cmd/api/main.go -o ./docs/swagger
+    @echo "Swagger documentation generated in ./docs/swagger" 
 
 # Clean build artifacts
 clean:

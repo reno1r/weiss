@@ -3,6 +3,9 @@ build
 bin
 *.test
 
+# swagger files
+docs/swagger
+
 # tmp files
 tmp
 

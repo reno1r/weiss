@@ -16,12 +16,12 @@ import (
 	"github.com/gofiber/fiber/v3/middleware/recover"
 	"gorm.io/gorm"
 
-	_ "github.com/reno1r/weiss/apps/service/docs"
+	_ "github.com/reno1r/weiss/apps/service/docs/swagger"
 
 	"github.com/reno1r/weiss/apps/service/internal/app/auth/services"
 	"github.com/reno1r/weiss/apps/service/internal/app/auth/usecases"
-	shopusecases "github.com/reno1r/weiss/apps/service/internal/app/shop/usecases"
 	shoprepositories "github.com/reno1r/weiss/apps/service/internal/app/shop/repositories"
+	shopusecases "github.com/reno1r/weiss/apps/service/internal/app/shop/usecases"
 	"github.com/reno1r/weiss/apps/service/internal/app/user/repositories"
 	"github.com/reno1r/weiss/apps/service/internal/config"
 	"github.com/reno1r/weiss/apps/service/internal/http/handlers"
