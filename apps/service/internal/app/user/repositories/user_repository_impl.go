@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"context"
 	"errors"
 
 	"gorm.io/gorm"
@@ -18,15 +19,15 @@ func NewUserRepository(db *gorm.DB) UserRepository {
 	}
 }
 
-func (r *userRepository) All() []entities.User {
+func (r *userRepository) All(ctx context.Context) []entities.User {
 	var users []entities.User
-	r.db.Find(&users)
+	r.db.WithContext(ctx).Find(&users)
 	return users
 }
 
-func (r *userRepository) FindByID(id uint64) (entities.User, error) {
+func (r *userRepository) FindByID(ctx context.Context, id uint64) (entities.User, error) {
 	var user entities.User
-	err := r.db.Where("id = ?", id).First(&user).Error
+	err := r.db.WithContext(ctx).Where("id = ?", id).First(&user).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return user, errors.New("user not found")
@@ -36,9 +37,9 @@ func (r *userRepository) FindByID(id uint64) (entities.User, error) {
 	return user, nil
 }
 
-func (r *userRepository) FindByPhone(phone string) (entities.User, error) {
+func (r *userRepository) FindByPhone(ctx context.Context, phone string) (entities.User, error) {
 	var user entities.User
-	err := r.db.Where("phone = ?", phone).First(&user).Error
+	err := r.db.WithContext(ctx).Where("phone = ?", phone).First(&user).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return user, errors.New("user not found")
@@ -48,9 +49,9 @@ func (r *userRepository) FindByPhone(phone string) (entities.User, error) {
 	return user, nil
 }
 
-func (r *userRepository) FindByEmail(email string) (entities.User, error) {
+func (r *userRepository) FindByEmail(ctx context.Context, email string) (entities.User, error) {
 	var user entities.User
-	err := r.db.Where("email = ?", email).First(&user).Error
+	err := r.db.WithContext(ctx).Where("email = ?", email).First(&user).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return user, errors.New("user not found")
@@ -60,22 +61,22 @@ func (r *userRepository) FindByEmail(email string) (entities.User, error) {
 	return user, nil
 }
 
-func (r *userRepository) Create(user entities.User) (entities.User, error) {
-	err := r.db.Create(&user).Error
+func (r *userRepository) Create(ctx context.Context, user entities.User) (entities.User, error) {
+	err := r.db.WithContext(ctx).Create(&user).Error
 	if err != nil {
 		return user, err
 	}
 	return user, nil
 }
 
-func (r *userRepository) Update(user entities.User) (entities.User, error) {
-	err := r.db.Save(&user).Error
+func (r *userRepository) Update(ctx context.Context, user entities.User) (entities.User, error) {
+	err := r.db.WithContext(ctx).Save(&user).Error
 	if err != nil {
 		return user, err
 	}
 	return user, nil
 }
 
-func (r *userRepository) Delete(user entities.User) error {
-	return r.db.Delete(&user).Error
+func (r *userRepository) Delete(ctx context.Context, user entities.User) error {
+	return r.db.WithContext(ctx).Delete(&user).Error
 }

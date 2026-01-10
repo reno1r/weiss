@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"context"
 	"errors"
 
 	"gorm.io/gorm"
@@ -18,15 +19,15 @@ func NewShopRepository(db *gorm.DB) ShopRepository {
 	}
 }
 
-func (r *shopRepository) All() []entities.Shop {
+func (r *shopRepository) All(ctx context.Context) []entities.Shop {
 	var shops []entities.Shop
-	r.db.Find(&shops)
+	r.db.WithContext(ctx).Find(&shops)
 	return shops
 }
 
-func (r *shopRepository) FindByID(id uint64) (entities.Shop, error) {
+func (r *shopRepository) FindByID(ctx context.Context, id uint64) (entities.Shop, error) {
 	var shop entities.Shop
-	err := r.db.Where("id = ?", id).First(&shop).Error
+	err := r.db.WithContext(ctx).Where("id = ?", id).First(&shop).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return shop, errors.New("shop not found")
@@ -36,9 +37,9 @@ func (r *shopRepository) FindByID(id uint64) (entities.Shop, error) {
 	return shop, nil
 }
 
-func (r *shopRepository) FindByPhone(phone string) (entities.Shop, error) {
+func (r *shopRepository) FindByPhone(ctx context.Context, phone string) (entities.Shop, error) {
 	var shop entities.Shop
-	err := r.db.Where("phone = ?", phone).First(&shop).Error
+	err := r.db.WithContext(ctx).Where("phone = ?", phone).First(&shop).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return shop, errors.New("shop not found")
@@ -48,9 +49,9 @@ func (r *shopRepository) FindByPhone(phone string) (entities.Shop, error) {
 	return shop, nil
 }
 
-func (r *shopRepository) FindByEmail(email string) (entities.Shop, error) {
+func (r *shopRepository) FindByEmail(ctx context.Context, email string) (entities.Shop, error) {
 	var shop entities.Shop
-	err := r.db.Where("email = ?", email).First(&shop).Error
+	err := r.db.WithContext(ctx).Where("email = ?", email).First(&shop).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return shop, errors.New("shop not found")
@@ -60,22 +61,22 @@ func (r *shopRepository) FindByEmail(email string) (entities.Shop, error) {
 	return shop, nil
 }
 
-func (r *shopRepository) Create(shop entities.Shop) (entities.Shop, error) {
-	err := r.db.Create(&shop).Error
+func (r *shopRepository) Create(ctx context.Context, shop entities.Shop) (entities.Shop, error) {
+	err := r.db.WithContext(ctx).Create(&shop).Error
 	if err != nil {
 		return shop, err
 	}
 	return shop, nil
 }
 
-func (r *shopRepository) Update(shop entities.Shop) (entities.Shop, error) {
-	err := r.db.Save(&shop).Error
+func (r *shopRepository) Update(ctx context.Context, shop entities.Shop) (entities.Shop, error) {
+	err := r.db.WithContext(ctx).Save(&shop).Error
 	if err != nil {
 		return shop, err
 	}
 	return shop, nil
 }
 
-func (r *shopRepository) Delete(shop entities.Shop) error {
-	return r.db.Delete(&shop).Error
+func (r *shopRepository) Delete(ctx context.Context, shop entities.Shop) error {
+	return r.db.WithContext(ctx).Delete(&shop).Error
 }

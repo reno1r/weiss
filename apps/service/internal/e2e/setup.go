@@ -122,7 +122,7 @@ func (e *TestEnv) CleanupDB(t *testing.T) {
 	if e.isLive || e.DB == nil {
 		return
 	}
-	err := e.DB.Exec("TRUNCATE TABLE users RESTART IDENTITY CASCADE").Error
+	err := e.DB.WithContext(e.Ctx).Exec("TRUNCATE TABLE users RESTART IDENTITY CASCADE").Error
 	require.NoError(t, err)
 }
 

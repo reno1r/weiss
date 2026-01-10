@@ -1,6 +1,7 @@
 package usecases
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
@@ -22,8 +23,8 @@ type GetRoleResult struct {
 	Role *entities.Role
 }
 
-func (u *GetRoleUsecase) Execute(id uint64) (*GetRoleResult, error) {
-	role, err := u.roleRepository.FindByID(id)
+func (u *GetRoleUsecase) Execute(ctx context.Context, id uint64) (*GetRoleResult, error) {
+	role, err := u.roleRepository.FindByID(ctx, id)
 	if err != nil {
 		if err.Error() == "role not found" {
 			return nil, errors.New("role not found")

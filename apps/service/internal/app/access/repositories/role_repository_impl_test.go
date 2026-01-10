@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -20,32 +21,20 @@ func setupRoleTest(t *testing.T) (repositories.ShopRepository, RoleRepository) {
 	return shopRepo, roleRepo
 }
 
-func createTestShop(t *testing.T, shopRepo repositories.ShopRepository) shopentities.Shop {
-	shop := shopentities.Shop{
-		Name:        "Test Shop",
-		Description: "Test shop description",
-		Address:     "123 Test St",
-		Phone:       "1234567890",
-		Email:       "test@example.com",
-		Website:     "https://test.com",
-		Logo:        "test.png",
-	}
-	created, err := shopRepo.Create(shop)
-	require.NoError(t, err)
-	return created
-}
 
 func TestRoleRepository_All(t *testing.T) {
 	t.Run("returns empty slice when no roles exist", func(t *testing.T) {
+		ctx := context.Background()
 		_, roleRepo := setupRoleTest(t)
 
-		roles := roleRepo.All()
+		roles := roleRepo.All(ctx)
 		assert.Empty(t, roles)
 	})
 
 	t.Run("returns all roles", func(t *testing.T) {
+		ctx := context.Background()
 		shopRepo, roleRepo := setupRoleTest(t)
-		shop := createTestShop(t, shopRepo)
+		shop := createTestShop(t, ctx, shopRepo)
 
 		role1 := entities.Role{
 			Name:        "Manager",
@@ -58,18 +47,19 @@ func TestRoleRepository_All(t *testing.T) {
 			ShopID:      shop.ID,
 		}
 
-		_, err := roleRepo.Create(role1)
+		_, err := roleRepo.Create(ctx, role1)
 		require.NoError(t, err)
-		_, err = roleRepo.Create(role2)
+		_, err = roleRepo.Create(ctx, role2)
 		require.NoError(t, err)
 
-		roles := roleRepo.All()
+		roles := roleRepo.All(ctx)
 		assert.Len(t, roles, 2)
 	})
 
 	t.Run("excludes soft deleted roles", func(t *testing.T) {
+		ctx := context.Background()
 		shopRepo, roleRepo := setupRoleTest(t)
-		shop := createTestShop(t, shopRepo)
+		shop := createTestShop(t, ctx, shopRepo)
 
 		role := entities.Role{
 			Name:        "Deleted Role",
@@ -77,21 +67,22 @@ func TestRoleRepository_All(t *testing.T) {
 			ShopID:      shop.ID,
 		}
 
-		created, err := roleRepo.Create(role)
+		created, err := roleRepo.Create(ctx, role)
 		require.NoError(t, err)
 
-		err = roleRepo.Delete(created)
+		err = roleRepo.Delete(ctx, created)
 		require.NoError(t, err)
 
-		roles := roleRepo.All()
+		roles := roleRepo.All(ctx)
 		assert.Empty(t, roles)
 	})
 }
 
 func TestRoleRepository_FindByID(t *testing.T) {
 	t.Run("returns role when found", func(t *testing.T) {
+		ctx := context.Background()
 		shopRepo, roleRepo := setupRoleTest(t)
-		shop := createTestShop(t, shopRepo)
+		shop := createTestShop(t, ctx, shopRepo)
 
 		role := entities.Role{
 			Name:        "Test Role",
@@ -99,10 +90,10 @@ func TestRoleRepository_FindByID(t *testing.T) {
 			ShopID:      shop.ID,
 		}
 
-		created, err := roleRepo.Create(role)
+		created, err := roleRepo.Create(ctx, role)
 		require.NoError(t, err)
 
-		found, err := roleRepo.FindByID(created.ID)
+		found, err := roleRepo.FindByID(ctx, created.ID)
 		require.NoError(t, err)
 		assert.Equal(t, created.ID, found.ID)
 		assert.Equal(t, "Test Role", found.Name)
@@ -110,16 +101,18 @@ func TestRoleRepository_FindByID(t *testing.T) {
 	})
 
 	t.Run("returns error when role not found", func(t *testing.T) {
+		ctx := context.Background()
 		_, roleRepo := setupRoleTest(t)
 
-		_, err := roleRepo.FindByID(999)
+		_, err := roleRepo.FindByID(ctx, 999)
 		assert.Error(t, err)
 		assert.Equal(t, "role not found", err.Error())
 	})
 
 	t.Run("does not find soft deleted roles", func(t *testing.T) {
+		ctx := context.Background()
 		shopRepo, roleRepo := setupRoleTest(t)
-		shop := createTestShop(t, shopRepo)
+		shop := createTestShop(t, ctx, shopRepo)
 
 		role := entities.Role{
 			Name:        "Deleted Role",
@@ -127,13 +120,13 @@ func TestRoleRepository_FindByID(t *testing.T) {
 			ShopID:      shop.ID,
 		}
 
-		created, err := roleRepo.Create(role)
+		created, err := roleRepo.Create(ctx, role)
 		require.NoError(t, err)
 
-		err = roleRepo.Delete(created)
+		err = roleRepo.Delete(ctx, created)
 		require.NoError(t, err)
 
-		_, err = roleRepo.FindByID(created.ID)
+		_, err = roleRepo.FindByID(ctx, created.ID)
 		assert.Error(t, err)
 		assert.Equal(t, "role not found", err.Error())
 	})
@@ -141,8 +134,9 @@ func TestRoleRepository_FindByID(t *testing.T) {
 
 func TestRoleRepository_FindByShopID(t *testing.T) {
 	t.Run("returns roles for a shop", func(t *testing.T) {
+		ctx := context.Background()
 		shopRepo, roleRepo := setupRoleTest(t)
-		shop1 := createTestShop(t, shopRepo)
+		shop1 := createTestShop(t, ctx, shopRepo)
 
 		shop2 := shopentities.Shop{
 			Name:        "Shop Two",
@@ -153,7 +147,7 @@ func TestRoleRepository_FindByShopID(t *testing.T) {
 			Website:     "https://shop2.com",
 			Logo:        "logo2.png",
 		}
-		createdShop2, err := shopRepo.Create(shop2)
+		createdShop2, err := shopRepo.Create(ctx, shop2)
 		require.NoError(t, err)
 
 		role1 := entities.Role{
@@ -172,30 +166,32 @@ func TestRoleRepository_FindByShopID(t *testing.T) {
 			ShopID:      createdShop2.ID,
 		}
 
-		_, err = roleRepo.Create(role1)
+		_, err = roleRepo.Create(ctx, role1)
 		require.NoError(t, err)
-		_, err = roleRepo.Create(role2)
+		_, err = roleRepo.Create(ctx, role2)
 		require.NoError(t, err)
-		_, err = roleRepo.Create(role3)
+		_, err = roleRepo.Create(ctx, role3)
 		require.NoError(t, err)
 
-		roles := roleRepo.FindByShopID(shop1.ID)
+		roles := roleRepo.FindByShopID(ctx, shop1.ID)
 		assert.Len(t, roles, 2)
 		assert.Equal(t, "Manager", roles[0].Name)
 		assert.Equal(t, "Cashier", roles[1].Name)
 	})
 
 	t.Run("returns empty slice when no roles for shop", func(t *testing.T) {
+		ctx := context.Background()
 		shopRepo, roleRepo := setupRoleTest(t)
-		shop := createTestShop(t, shopRepo)
+		shop := createTestShop(t, ctx, shopRepo)
 
-		roles := roleRepo.FindByShopID(shop.ID)
+		roles := roleRepo.FindByShopID(ctx, shop.ID)
 		assert.Empty(t, roles)
 	})
 
 	t.Run("excludes soft deleted roles", func(t *testing.T) {
+		ctx := context.Background()
 		shopRepo, roleRepo := setupRoleTest(t)
-		shop := createTestShop(t, shopRepo)
+		shop := createTestShop(t, ctx, shopRepo)
 
 		role1 := entities.Role{
 			Name:        "Manager",
@@ -208,15 +204,15 @@ func TestRoleRepository_FindByShopID(t *testing.T) {
 			ShopID:      shop.ID,
 		}
 
-		created1, err := roleRepo.Create(role1)
+		created1, err := roleRepo.Create(ctx, role1)
 		require.NoError(t, err)
-		_, err = roleRepo.Create(role2)
-		require.NoError(t, err)
-
-		err = roleRepo.Delete(created1)
+		_, err = roleRepo.Create(ctx, role2)
 		require.NoError(t, err)
 
-		roles := roleRepo.FindByShopID(shop.ID)
+		err = roleRepo.Delete(ctx, created1)
+		require.NoError(t, err)
+
+		roles := roleRepo.FindByShopID(ctx, shop.ID)
 		assert.Len(t, roles, 1)
 		assert.Equal(t, "Cashier", roles[0].Name)
 	})
@@ -224,8 +220,9 @@ func TestRoleRepository_FindByShopID(t *testing.T) {
 
 func TestRoleRepository_Create(t *testing.T) {
 	t.Run("creates role successfully", func(t *testing.T) {
+		ctx := context.Background()
 		shopRepo, roleRepo := setupRoleTest(t)
-		shop := createTestShop(t, shopRepo)
+		shop := createTestShop(t, ctx, shopRepo)
 
 		role := entities.Role{
 			Name:        "New Role",
@@ -233,7 +230,7 @@ func TestRoleRepository_Create(t *testing.T) {
 			ShopID:      shop.ID,
 		}
 
-		created, err := roleRepo.Create(role)
+		created, err := roleRepo.Create(ctx, role)
 		require.NoError(t, err)
 		assert.NotZero(t, created.ID)
 		assert.Equal(t, "New Role", created.Name)
@@ -246,8 +243,9 @@ func TestRoleRepository_Create(t *testing.T) {
 
 func TestRoleRepository_Update(t *testing.T) {
 	t.Run("updates role successfully", func(t *testing.T) {
+		ctx := context.Background()
 		shopRepo, roleRepo := setupRoleTest(t)
-		shop := createTestShop(t, shopRepo)
+		shop := createTestShop(t, ctx, shopRepo)
 
 		role := entities.Role{
 			Name:        "Original Role",
@@ -255,7 +253,7 @@ func TestRoleRepository_Update(t *testing.T) {
 			ShopID:      shop.ID,
 		}
 
-		created, err := roleRepo.Create(role)
+		created, err := roleRepo.Create(ctx, role)
 		require.NoError(t, err)
 
 		originalUpdatedAt := created.UpdatedAt
@@ -264,7 +262,7 @@ func TestRoleRepository_Update(t *testing.T) {
 		created.Name = "Updated Role"
 		created.Description = "Updated description"
 
-		updated, err := roleRepo.Update(created)
+		updated, err := roleRepo.Update(ctx, created)
 		require.NoError(t, err)
 		assert.Equal(t, "Updated Role", updated.Name)
 		assert.Equal(t, "Updated description", updated.Description)
@@ -272,8 +270,9 @@ func TestRoleRepository_Update(t *testing.T) {
 	})
 
 	t.Run("updates non-zero fields", func(t *testing.T) {
+		ctx := context.Background()
 		shopRepo, roleRepo := setupRoleTest(t)
-		shop := createTestShop(t, shopRepo)
+		shop := createTestShop(t, ctx, shopRepo)
 
 		role := entities.Role{
 			Name:        "Test Role",
@@ -281,11 +280,11 @@ func TestRoleRepository_Update(t *testing.T) {
 			ShopID:      shop.ID,
 		}
 
-		created, err := roleRepo.Create(role)
+		created, err := roleRepo.Create(ctx, role)
 		require.NoError(t, err)
 
 		created.Description = "New description"
-		updated, err := roleRepo.Update(created)
+		updated, err := roleRepo.Update(ctx, created)
 		require.NoError(t, err)
 		assert.Equal(t, "New description", updated.Description)
 	})
@@ -293,8 +292,9 @@ func TestRoleRepository_Update(t *testing.T) {
 
 func TestRoleRepository_Delete(t *testing.T) {
 	t.Run("soft deletes role successfully", func(t *testing.T) {
+		ctx := context.Background()
 		shopRepo, roleRepo := setupRoleTest(t)
-		shop := createTestShop(t, shopRepo)
+		shop := createTestShop(t, ctx, shopRepo)
 
 		role := entities.Role{
 			Name:        "Role To Delete",
@@ -302,23 +302,24 @@ func TestRoleRepository_Delete(t *testing.T) {
 			ShopID:      shop.ID,
 		}
 
-		created, err := roleRepo.Create(role)
+		created, err := roleRepo.Create(ctx, role)
 		require.NoError(t, err)
 
-		err = roleRepo.Delete(created)
+		err = roleRepo.Delete(ctx, created)
 		require.NoError(t, err)
 
-		_, err = roleRepo.FindByID(created.ID)
+		_, err = roleRepo.FindByID(ctx, created.ID)
 		assert.Error(t, err)
 		assert.Equal(t, "role not found", err.Error())
 
-		roles := roleRepo.FindByShopID(shop.ID)
+		roles := roleRepo.FindByShopID(ctx, shop.ID)
 		assert.Empty(t, roles)
 	})
 
 	t.Run("can delete multiple roles", func(t *testing.T) {
+		ctx := context.Background()
 		shopRepo, roleRepo := setupRoleTest(t)
-		shop := createTestShop(t, shopRepo)
+		shop := createTestShop(t, ctx, shopRepo)
 
 		role1 := entities.Role{
 			Name:        "Role One",
@@ -331,17 +332,17 @@ func TestRoleRepository_Delete(t *testing.T) {
 			ShopID:      shop.ID,
 		}
 
-		created1, err := roleRepo.Create(role1)
+		created1, err := roleRepo.Create(ctx, role1)
 		require.NoError(t, err)
-		created2, err := roleRepo.Create(role2)
-		require.NoError(t, err)
-
-		err = roleRepo.Delete(created1)
-		require.NoError(t, err)
-		err = roleRepo.Delete(created2)
+		created2, err := roleRepo.Create(ctx, role2)
 		require.NoError(t, err)
 
-		roles := roleRepo.All()
+		err = roleRepo.Delete(ctx, created1)
+		require.NoError(t, err)
+		err = roleRepo.Delete(ctx, created2)
+		require.NoError(t, err)
+
+		roles := roleRepo.All(ctx)
 		assert.Empty(t, roles)
 	})
 }

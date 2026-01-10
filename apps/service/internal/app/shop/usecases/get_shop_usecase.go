@@ -1,6 +1,7 @@
 package usecases
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
@@ -22,8 +23,8 @@ type GetShopResult struct {
 	Shop *entities.Shop
 }
 
-func (u *GetShopUsecase) Execute(id uint64) (*GetShopResult, error) {
-	shop, err := u.shopRepository.FindByID(id)
+func (u *GetShopUsecase) Execute(ctx context.Context, id uint64) (*GetShopResult, error) {
+	shop, err := u.shopRepository.FindByID(ctx, id)
 	if err != nil {
 		if err.Error() == "shop not found" {
 			return nil, errors.New("shop not found")

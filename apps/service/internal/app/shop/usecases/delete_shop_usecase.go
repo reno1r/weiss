@@ -1,6 +1,7 @@
 package usecases
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
@@ -17,13 +18,13 @@ func NewDeleteShopUsecase(shopRepository repositories.ShopRepository) *DeleteSho
 	}
 }
 
-func (u *DeleteShopUsecase) Execute(id uint64) error {
-	shop, err := u.shopRepository.FindByID(id)
+func (u *DeleteShopUsecase) Execute(ctx context.Context, id uint64) error {
+	shop, err := u.shopRepository.FindByID(ctx, id)
 	if err != nil {
 		return errors.New("shop not found")
 	}
 
-	err = u.shopRepository.Delete(shop)
+	err = u.shopRepository.Delete(ctx, shop)
 	if err != nil {
 		return fmt.Errorf("failed to delete shop: %w", err)
 	}

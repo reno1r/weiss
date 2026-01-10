@@ -1,6 +1,7 @@
 package usecases
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
@@ -31,7 +32,7 @@ type RefreshTokenResult struct {
 	RefreshToken string
 }
 
-func (u *RefreshTokenUsecase) Execute(param RefreshTokenParam) (*RefreshTokenResult, error) {
+func (u *RefreshTokenUsecase) Execute(ctx context.Context, param RefreshTokenParam) (*RefreshTokenResult, error) {
 	if param.RefreshToken == "" {
 		return nil, errors.New("refresh token is required")
 	}
@@ -53,9 +54,9 @@ func (u *RefreshTokenUsecase) Execute(param RefreshTokenParam) (*RefreshTokenRes
 
 	var user entities.User
 	if claims.Email != "" {
-		user, err = u.userRepository.FindByEmail(claims.Email)
+		user, err = u.userRepository.FindByEmail(ctx, claims.Email)
 	} else if claims.Phone != "" {
-		user, err = u.userRepository.FindByPhone(claims.Phone)
+		user, err = u.userRepository.FindByPhone(ctx, claims.Phone)
 	} else {
 		return nil, errors.New("invalid token claims")
 	}

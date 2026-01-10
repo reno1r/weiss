@@ -131,7 +131,7 @@ func (s *Server) setupShopRoutes() {
 
 	listShopsUsecase := shopusecases.NewListShopsUsecase(shopRepo)
 	getShopUsecase := shopusecases.NewGetShopUsecase(shopRepo)
-	createShopUsecase := shopusecases.NewCreateShopUsecase(shopRepo)
+	createShopUsecase := shopusecases.NewCreateShopUsecase(s.db, shopRepo, roleRepo, staffRepo)
 	updateShopUsecase := shopusecases.NewUpdateShopUsecase(shopRepo)
 	deleteShopUsecase := shopusecases.NewDeleteShopUsecase(shopRepo)
 

@@ -1,6 +1,7 @@
 package usecases
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -23,8 +24,9 @@ func setupGetRoleTest(t *testing.T) (*GetRoleUsecase, accessrepositories.RoleRep
 
 func TestGetRoleUsecase_Execute(t *testing.T) {
 	t.Run("returns role when found", func(t *testing.T) {
+		ctx := context.Background()
 		usecase, roleRepo, shopRepo := setupGetRoleTest(t)
-		shop := createTestShop(t, shopRepo)
+		shop := createTestShop(t, ctx, shopRepo)
 
 		role := entities.Role{
 			Name:        "Manager",
@@ -32,10 +34,10 @@ func TestGetRoleUsecase_Execute(t *testing.T) {
 			ShopID:      shop.ID,
 		}
 
-		created, err := roleRepo.Create(role)
+		created, err := roleRepo.Create(ctx, role)
 		require.NoError(t, err)
 
-		result, err := usecase.Execute(created.ID)
+		result, err := usecase.Execute(ctx, created.ID)
 		require.NoError(t, err)
 		assert.NotNil(t, result.Role)
 		assert.Equal(t, created.ID, result.Role.ID)
@@ -45,17 +47,19 @@ func TestGetRoleUsecase_Execute(t *testing.T) {
 	})
 
 	t.Run("returns error when role not found", func(t *testing.T) {
+		ctx := context.Background()
 		usecase, _, _ := setupGetRoleTest(t)
 
-		result, err := usecase.Execute(999)
+		result, err := usecase.Execute(ctx, 999)
 		assert.Error(t, err)
 		assert.Equal(t, "role not found", err.Error())
 		assert.Nil(t, result)
 	})
 
 	t.Run("does not find soft deleted roles", func(t *testing.T) {
+		ctx := context.Background()
 		usecase, roleRepo, shopRepo := setupGetRoleTest(t)
-		shop := createTestShop(t, shopRepo)
+		shop := createTestShop(t, ctx, shopRepo)
 
 		role := entities.Role{
 			Name:        "Deleted Role",
@@ -63,16 +67,15 @@ func TestGetRoleUsecase_Execute(t *testing.T) {
 			ShopID:      shop.ID,
 		}
 
-		created, err := roleRepo.Create(role)
+		created, err := roleRepo.Create(ctx, role)
 		require.NoError(t, err)
 
-		err = roleRepo.Delete(created)
+		err = roleRepo.Delete(ctx, created)
 		require.NoError(t, err)
 
-		result, err := usecase.Execute(created.ID)
+		result, err := usecase.Execute(ctx, created.ID)
 		assert.Error(t, err)
 		assert.Equal(t, "role not found", err.Error())
 		assert.Nil(t, result)
 	})
 }
-

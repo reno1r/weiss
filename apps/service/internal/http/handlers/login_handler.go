@@ -53,7 +53,8 @@ func (h *LoginHandler) Handle(c fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "invalid request body")
 	}
 
-	response, err := h.loginUsecase.Execute(usecases.LoginParam{
+	ctx := c.Context()
+	response, err := h.loginUsecase.Execute(ctx, usecases.LoginParam{
 		Email:    credentials.Email,
 		Phone:    credentials.Phone,
 		Password: credentials.Password,

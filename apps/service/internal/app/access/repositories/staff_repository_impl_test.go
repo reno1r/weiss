@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -24,42 +25,59 @@ func setupStaffTest(t *testing.T) (repositories.ShopRepository, RoleRepository, 
 	return shopRepo, roleRepo, userRepo, staffRepo
 }
 
-func createTestUser(t *testing.T, userRepo userrepositories.UserRepository) userentities.User {
+func createTestShop(t *testing.T, ctx context.Context, shopRepo repositories.ShopRepository) shopentities.Shop {
+	shop := shopentities.Shop{
+		Name:        "Test Shop",
+		Description: "Test shop description",
+		Address:     "123 Test St",
+		Phone:       "1234567890",
+		Email:       "test@example.com",
+		Website:     "https://test.com",
+		Logo:        "test.png",
+	}
+	created, err := shopRepo.Create(ctx, shop)
+	require.NoError(t, err)
+	return created
+}
+
+func createTestUser(t *testing.T, ctx context.Context, userRepo userrepositories.UserRepository) userentities.User {
 	user := userentities.User{
 		FullName: "Test User",
 		Phone:    "1234567890",
 		Email:    "test@example.com",
 		Password: "hashedpassword",
 	}
-	created, err := userRepo.Create(user)
+	created, err := userRepo.Create(ctx, user)
 	require.NoError(t, err)
 	return created
 }
 
-func createTestRole(t *testing.T, roleRepo RoleRepository, shopID uint64) entities.Role {
+func createTestRole(t *testing.T, ctx context.Context, roleRepo RoleRepository, shopID uint64) entities.Role {
 	role := entities.Role{
 		Name:        "Test Role",
 		Description: "Test role description",
 		ShopID:      shopID,
 	}
-	created, err := roleRepo.Create(role)
+	created, err := roleRepo.Create(ctx, role)
 	require.NoError(t, err)
 	return created
 }
 
 func TestStaffRepository_All(t *testing.T) {
 	t.Run("returns empty slice when no staffs exist", func(t *testing.T) {
+		ctx := context.Background()
 		_, _, _, staffRepo := setupStaffTest(t)
 
-		staffs := staffRepo.All()
+		staffs := staffRepo.All(ctx)
 		assert.Empty(t, staffs)
 	})
 
 	t.Run("returns all staffs", func(t *testing.T) {
+		ctx := context.Background()
 		shopRepo, roleRepo, userRepo, staffRepo := setupStaffTest(t)
-		shop := createTestShop(t, shopRepo)
-		user := createTestUser(t, userRepo)
-		role := createTestRole(t, roleRepo, shop.ID)
+		shop := createTestShop(t, ctx, shopRepo)
+		user := createTestUser(t, ctx, userRepo)
+		role := createTestRole(t, ctx, roleRepo, shop.ID)
 
 		staff1 := entities.Staff{
 			UserID: user.ID,
@@ -72,20 +90,21 @@ func TestStaffRepository_All(t *testing.T) {
 			ShopID: shop.ID,
 		}
 
-		_, err := staffRepo.Create(staff1)
+		_, err := staffRepo.Create(ctx, staff1)
 		require.NoError(t, err)
-		_, err = staffRepo.Create(staff2)
+		_, err = staffRepo.Create(ctx, staff2)
 		require.NoError(t, err)
 
-		staffs := staffRepo.All()
+		staffs := staffRepo.All(ctx)
 		assert.Len(t, staffs, 2)
 	})
 
 	t.Run("excludes soft deleted staffs", func(t *testing.T) {
+		ctx := context.Background()
 		shopRepo, roleRepo, userRepo, staffRepo := setupStaffTest(t)
-		shop := createTestShop(t, shopRepo)
-		user := createTestUser(t, userRepo)
-		role := createTestRole(t, roleRepo, shop.ID)
+		shop := createTestShop(t, ctx, shopRepo)
+		user := createTestUser(t, ctx, userRepo)
+		role := createTestRole(t, ctx, roleRepo, shop.ID)
 
 		staff := entities.Staff{
 			UserID: user.ID,
@@ -93,23 +112,24 @@ func TestStaffRepository_All(t *testing.T) {
 			ShopID: shop.ID,
 		}
 
-		created, err := staffRepo.Create(staff)
+		created, err := staffRepo.Create(ctx, staff)
 		require.NoError(t, err)
 
-		err = staffRepo.Delete(created)
+		err = staffRepo.Delete(ctx, created)
 		require.NoError(t, err)
 
-		staffs := staffRepo.All()
+		staffs := staffRepo.All(ctx)
 		assert.Empty(t, staffs)
 	})
 }
 
 func TestStaffRepository_FindByID(t *testing.T) {
 	t.Run("returns staff when found", func(t *testing.T) {
+		ctx := context.Background()
 		shopRepo, roleRepo, userRepo, staffRepo := setupStaffTest(t)
-		shop := createTestShop(t, shopRepo)
-		user := createTestUser(t, userRepo)
-		role := createTestRole(t, roleRepo, shop.ID)
+		shop := createTestShop(t, ctx, shopRepo)
+		user := createTestUser(t, ctx, userRepo)
+		role := createTestRole(t, ctx, roleRepo, shop.ID)
 
 		staff := entities.Staff{
 			UserID: user.ID,
@@ -117,10 +137,10 @@ func TestStaffRepository_FindByID(t *testing.T) {
 			ShopID: shop.ID,
 		}
 
-		created, err := staffRepo.Create(staff)
+		created, err := staffRepo.Create(ctx, staff)
 		require.NoError(t, err)
 
-		found, err := staffRepo.FindByID(created.ID)
+		found, err := staffRepo.FindByID(ctx, created.ID)
 		require.NoError(t, err)
 		assert.Equal(t, created.ID, found.ID)
 		assert.Equal(t, user.ID, found.UserID)
@@ -129,18 +149,20 @@ func TestStaffRepository_FindByID(t *testing.T) {
 	})
 
 	t.Run("returns error when staff not found", func(t *testing.T) {
+		ctx := context.Background()
 		_, _, _, staffRepo := setupStaffTest(t)
 
-		_, err := staffRepo.FindByID(999)
+		_, err := staffRepo.FindByID(ctx, 999)
 		assert.Error(t, err)
 		assert.Equal(t, "staff not found", err.Error())
 	})
 
 	t.Run("does not find soft deleted staffs", func(t *testing.T) {
+		ctx := context.Background()
 		shopRepo, roleRepo, userRepo, staffRepo := setupStaffTest(t)
-		shop := createTestShop(t, shopRepo)
-		user := createTestUser(t, userRepo)
-		role := createTestRole(t, roleRepo, shop.ID)
+		shop := createTestShop(t, ctx, shopRepo)
+		user := createTestUser(t, ctx, userRepo)
+		role := createTestRole(t, ctx, roleRepo, shop.ID)
 
 		staff := entities.Staff{
 			UserID: user.ID,
@@ -148,13 +170,13 @@ func TestStaffRepository_FindByID(t *testing.T) {
 			ShopID: shop.ID,
 		}
 
-		created, err := staffRepo.Create(staff)
+		created, err := staffRepo.Create(ctx, staff)
 		require.NoError(t, err)
 
-		err = staffRepo.Delete(created)
+		err = staffRepo.Delete(ctx, created)
 		require.NoError(t, err)
 
-		_, err = staffRepo.FindByID(created.ID)
+		_, err = staffRepo.FindByID(ctx, created.ID)
 		assert.Error(t, err)
 		assert.Equal(t, "staff not found", err.Error())
 	})
@@ -162,8 +184,9 @@ func TestStaffRepository_FindByID(t *testing.T) {
 
 func TestStaffRepository_FindByShopID(t *testing.T) {
 	t.Run("returns staffs for a shop", func(t *testing.T) {
+		ctx := context.Background()
 		shopRepo, roleRepo, userRepo, staffRepo := setupStaffTest(t)
-		shop1 := createTestShop(t, shopRepo)
+		shop1 := createTestShop(t, ctx, shopRepo)
 
 		shop2 := shopentities.Shop{
 			Name:        "Shop Two",
@@ -174,21 +197,21 @@ func TestStaffRepository_FindByShopID(t *testing.T) {
 			Website:     "https://shop2.com",
 			Logo:        "logo2.png",
 		}
-		createdShop2, err := shopRepo.Create(shop2)
+		createdShop2, err := shopRepo.Create(ctx, shop2)
 		require.NoError(t, err)
 
-		user1 := createTestUser(t, userRepo)
+		user1 := createTestUser(t, ctx, userRepo)
 		user2 := userentities.User{
 			FullName: "User Two",
 			Phone:    "0987654321",
 			Email:    "user2@example.com",
 			Password: "hashedpassword",
 		}
-		createdUser2, err := userRepo.Create(user2)
+		createdUser2, err := userRepo.Create(ctx, user2)
 		require.NoError(t, err)
 
-		role1 := createTestRole(t, roleRepo, shop1.ID)
-		role2 := createTestRole(t, roleRepo, createdShop2.ID)
+		role1 := createTestRole(t, ctx, roleRepo, shop1.ID)
+		role2 := createTestRole(t, ctx, roleRepo, createdShop2.ID)
 
 		staff1 := entities.Staff{
 			UserID: user1.ID,
@@ -206,30 +229,32 @@ func TestStaffRepository_FindByShopID(t *testing.T) {
 			ShopID: createdShop2.ID,
 		}
 
-		_, err = staffRepo.Create(staff1)
+		_, err = staffRepo.Create(ctx, staff1)
 		require.NoError(t, err)
-		_, err = staffRepo.Create(staff2)
+		_, err = staffRepo.Create(ctx, staff2)
 		require.NoError(t, err)
-		_, err = staffRepo.Create(staff3)
+		_, err = staffRepo.Create(ctx, staff3)
 		require.NoError(t, err)
 
-		staffs := staffRepo.FindByShopID(shop1.ID)
+		staffs := staffRepo.FindByShopID(ctx, shop1.ID)
 		assert.Len(t, staffs, 2)
 	})
 
 	t.Run("returns empty slice when no staffs for shop", func(t *testing.T) {
+		ctx := context.Background()
 		shopRepo, _, _, staffRepo := setupStaffTest(t)
-		shop := createTestShop(t, shopRepo)
+		shop := createTestShop(t, ctx, shopRepo)
 
-		staffs := staffRepo.FindByShopID(shop.ID)
+		staffs := staffRepo.FindByShopID(ctx, shop.ID)
 		assert.Empty(t, staffs)
 	})
 
 	t.Run("excludes soft deleted staffs", func(t *testing.T) {
+		ctx := context.Background()
 		shopRepo, roleRepo, userRepo, staffRepo := setupStaffTest(t)
-		shop := createTestShop(t, shopRepo)
-		user := createTestUser(t, userRepo)
-		role := createTestRole(t, roleRepo, shop.ID)
+		shop := createTestShop(t, ctx, shopRepo)
+		user := createTestUser(t, ctx, userRepo)
+		role := createTestRole(t, ctx, roleRepo, shop.ID)
 
 		staff1 := entities.Staff{
 			UserID: user.ID,
@@ -242,23 +267,24 @@ func TestStaffRepository_FindByShopID(t *testing.T) {
 			ShopID: shop.ID,
 		}
 
-		created1, err := staffRepo.Create(staff1)
+		created1, err := staffRepo.Create(ctx, staff1)
 		require.NoError(t, err)
-		_, err = staffRepo.Create(staff2)
-		require.NoError(t, err)
-
-		err = staffRepo.Delete(created1)
+		_, err = staffRepo.Create(ctx, staff2)
 		require.NoError(t, err)
 
-		staffs := staffRepo.FindByShopID(shop.ID)
+		err = staffRepo.Delete(ctx, created1)
+		require.NoError(t, err)
+
+		staffs := staffRepo.FindByShopID(ctx, shop.ID)
 		assert.Len(t, staffs, 1)
 	})
 }
 
 func TestStaffRepository_FindByUserID(t *testing.T) {
 	t.Run("returns staffs for a user", func(t *testing.T) {
+		ctx := context.Background()
 		shopRepo, roleRepo, userRepo, staffRepo := setupStaffTest(t)
-		shop1 := createTestShop(t, shopRepo)
+		shop1 := createTestShop(t, ctx, shopRepo)
 		shop2 := shopentities.Shop{
 			Name:        "Shop Two",
 			Description: "Second shop",
@@ -268,12 +294,12 @@ func TestStaffRepository_FindByUserID(t *testing.T) {
 			Website:     "https://shop2.com",
 			Logo:        "logo2.png",
 		}
-		createdShop2, err := shopRepo.Create(shop2)
+		createdShop2, err := shopRepo.Create(ctx, shop2)
 		require.NoError(t, err)
 
-		user := createTestUser(t, userRepo)
-		role1 := createTestRole(t, roleRepo, shop1.ID)
-		role2 := createTestRole(t, roleRepo, createdShop2.ID)
+		user := createTestUser(t, ctx, userRepo)
+		role1 := createTestRole(t, ctx, roleRepo, shop1.ID)
+		role2 := createTestRole(t, ctx, roleRepo, createdShop2.ID)
 
 		staff1 := entities.Staff{
 			UserID: user.ID,
@@ -286,28 +312,30 @@ func TestStaffRepository_FindByUserID(t *testing.T) {
 			ShopID: createdShop2.ID,
 		}
 
-		_, err = staffRepo.Create(staff1)
+		_, err = staffRepo.Create(ctx, staff1)
 		require.NoError(t, err)
-		_, err = staffRepo.Create(staff2)
+		_, err = staffRepo.Create(ctx, staff2)
 		require.NoError(t, err)
 
-		staffs := staffRepo.FindByUserID(user.ID)
+		staffs := staffRepo.FindByUserID(ctx, user.ID)
 		assert.Len(t, staffs, 2)
 	})
 
 	t.Run("returns empty slice when no staffs for user", func(t *testing.T) {
+		ctx := context.Background()
 		_, _, userRepo, staffRepo := setupStaffTest(t)
-		user := createTestUser(t, userRepo)
+		user := createTestUser(t, ctx, userRepo)
 
-		staffs := staffRepo.FindByUserID(user.ID)
+		staffs := staffRepo.FindByUserID(ctx, user.ID)
 		assert.Empty(t, staffs)
 	})
 
 	t.Run("excludes soft deleted staffs", func(t *testing.T) {
+		ctx := context.Background()
 		shopRepo, roleRepo, userRepo, staffRepo := setupStaffTest(t)
-		shop := createTestShop(t, shopRepo)
-		user := createTestUser(t, userRepo)
-		role := createTestRole(t, roleRepo, shop.ID)
+		shop := createTestShop(t, ctx, shopRepo)
+		user := createTestUser(t, ctx, userRepo)
+		role := createTestRole(t, ctx, roleRepo, shop.ID)
 
 		staff1 := entities.Staff{
 			UserID: user.ID,
@@ -320,34 +348,35 @@ func TestStaffRepository_FindByUserID(t *testing.T) {
 			ShopID: shop.ID,
 		}
 
-		created1, err := staffRepo.Create(staff1)
+		created1, err := staffRepo.Create(ctx, staff1)
 		require.NoError(t, err)
-		_, err = staffRepo.Create(staff2)
-		require.NoError(t, err)
-
-		err = staffRepo.Delete(created1)
+		_, err = staffRepo.Create(ctx, staff2)
 		require.NoError(t, err)
 
-		staffs := staffRepo.FindByUserID(user.ID)
+		err = staffRepo.Delete(ctx, created1)
+		require.NoError(t, err)
+
+		staffs := staffRepo.FindByUserID(ctx, user.ID)
 		assert.Len(t, staffs, 1)
 	})
 }
 
 func TestStaffRepository_FindByRoleID(t *testing.T) {
 	t.Run("returns staffs for a role", func(t *testing.T) {
+		ctx := context.Background()
 		shopRepo, roleRepo, userRepo, staffRepo := setupStaffTest(t)
-		shop := createTestShop(t, shopRepo)
-		user1 := createTestUser(t, userRepo)
+		shop := createTestShop(t, ctx, shopRepo)
+		user1 := createTestUser(t, ctx, userRepo)
 		user2 := userentities.User{
 			FullName: "User Two",
 			Phone:    "0987654321",
 			Email:    "user2@example.com",
 			Password: "hashedpassword",
 		}
-		createdUser2, err := userRepo.Create(user2)
+		createdUser2, err := userRepo.Create(ctx, user2)
 		require.NoError(t, err)
 
-		role := createTestRole(t, roleRepo, shop.ID)
+		role := createTestRole(t, ctx, roleRepo, shop.ID)
 
 		staff1 := entities.Staff{
 			UserID: user1.ID,
@@ -360,29 +389,31 @@ func TestStaffRepository_FindByRoleID(t *testing.T) {
 			ShopID: shop.ID,
 		}
 
-		_, err = staffRepo.Create(staff1)
+		_, err = staffRepo.Create(ctx, staff1)
 		require.NoError(t, err)
-		_, err = staffRepo.Create(staff2)
+		_, err = staffRepo.Create(ctx, staff2)
 		require.NoError(t, err)
 
-		staffs := staffRepo.FindByRoleID(role.ID)
+		staffs := staffRepo.FindByRoleID(ctx, role.ID)
 		assert.Len(t, staffs, 2)
 	})
 
 	t.Run("returns empty slice when no staffs for role", func(t *testing.T) {
+		ctx := context.Background()
 		shopRepo, roleRepo, _, staffRepo := setupStaffTest(t)
-		shop := createTestShop(t, shopRepo)
-		role := createTestRole(t, roleRepo, shop.ID)
+		shop := createTestShop(t, ctx, shopRepo)
+		role := createTestRole(t, ctx, roleRepo, shop.ID)
 
-		staffs := staffRepo.FindByRoleID(role.ID)
+		staffs := staffRepo.FindByRoleID(ctx, role.ID)
 		assert.Empty(t, staffs)
 	})
 
 	t.Run("excludes soft deleted staffs", func(t *testing.T) {
+		ctx := context.Background()
 		shopRepo, roleRepo, userRepo, staffRepo := setupStaffTest(t)
-		shop := createTestShop(t, shopRepo)
-		user := createTestUser(t, userRepo)
-		role := createTestRole(t, roleRepo, shop.ID)
+		shop := createTestShop(t, ctx, shopRepo)
+		user := createTestUser(t, ctx, userRepo)
+		role := createTestRole(t, ctx, roleRepo, shop.ID)
 
 		staff1 := entities.Staff{
 			UserID: user.ID,
@@ -395,25 +426,26 @@ func TestStaffRepository_FindByRoleID(t *testing.T) {
 			ShopID: shop.ID,
 		}
 
-		created1, err := staffRepo.Create(staff1)
+		created1, err := staffRepo.Create(ctx, staff1)
 		require.NoError(t, err)
-		_, err = staffRepo.Create(staff2)
-		require.NoError(t, err)
-
-		err = staffRepo.Delete(created1)
+		_, err = staffRepo.Create(ctx, staff2)
 		require.NoError(t, err)
 
-		staffs := staffRepo.FindByRoleID(role.ID)
+		err = staffRepo.Delete(ctx, created1)
+		require.NoError(t, err)
+
+		staffs := staffRepo.FindByRoleID(ctx, role.ID)
 		assert.Len(t, staffs, 1)
 	})
 }
 
 func TestStaffRepository_FindByShopIDAndUserID(t *testing.T) {
 	t.Run("returns staff when found", func(t *testing.T) {
+		ctx := context.Background()
 		shopRepo, roleRepo, userRepo, staffRepo := setupStaffTest(t)
-		shop := createTestShop(t, shopRepo)
-		user := createTestUser(t, userRepo)
-		role := createTestRole(t, roleRepo, shop.ID)
+		shop := createTestShop(t, ctx, shopRepo)
+		user := createTestUser(t, ctx, userRepo)
+		role := createTestRole(t, ctx, roleRepo, shop.ID)
 
 		staff := entities.Staff{
 			UserID: user.ID,
@@ -421,10 +453,10 @@ func TestStaffRepository_FindByShopIDAndUserID(t *testing.T) {
 			ShopID: shop.ID,
 		}
 
-		created, err := staffRepo.Create(staff)
+		created, err := staffRepo.Create(ctx, staff)
 		require.NoError(t, err)
 
-		found, err := staffRepo.FindByShopIDAndUserID(shop.ID, user.ID)
+		found, err := staffRepo.FindByShopIDAndUserID(ctx, shop.ID, user.ID)
 		require.NoError(t, err)
 		assert.Equal(t, created.ID, found.ID)
 		assert.Equal(t, shop.ID, found.ShopID)
@@ -432,20 +464,22 @@ func TestStaffRepository_FindByShopIDAndUserID(t *testing.T) {
 	})
 
 	t.Run("returns error when staff not found", func(t *testing.T) {
+		ctx := context.Background()
 		shopRepo, _, userRepo, staffRepo := setupStaffTest(t)
-		shop := createTestShop(t, shopRepo)
-		user := createTestUser(t, userRepo)
+		shop := createTestShop(t, ctx, shopRepo)
+		user := createTestUser(t, ctx, userRepo)
 
-		_, err := staffRepo.FindByShopIDAndUserID(shop.ID, user.ID)
+		_, err := staffRepo.FindByShopIDAndUserID(ctx, shop.ID, user.ID)
 		assert.Error(t, err)
 		assert.Equal(t, "staff not found", err.Error())
 	})
 
 	t.Run("does not find soft deleted staffs", func(t *testing.T) {
+		ctx := context.Background()
 		shopRepo, roleRepo, userRepo, staffRepo := setupStaffTest(t)
-		shop := createTestShop(t, shopRepo)
-		user := createTestUser(t, userRepo)
-		role := createTestRole(t, roleRepo, shop.ID)
+		shop := createTestShop(t, ctx, shopRepo)
+		user := createTestUser(t, ctx, userRepo)
+		role := createTestRole(t, ctx, roleRepo, shop.ID)
 
 		staff := entities.Staff{
 			UserID: user.ID,
@@ -453,13 +487,13 @@ func TestStaffRepository_FindByShopIDAndUserID(t *testing.T) {
 			ShopID: shop.ID,
 		}
 
-		created, err := staffRepo.Create(staff)
+		created, err := staffRepo.Create(ctx, staff)
 		require.NoError(t, err)
 
-		err = staffRepo.Delete(created)
+		err = staffRepo.Delete(ctx, created)
 		require.NoError(t, err)
 
-		_, err = staffRepo.FindByShopIDAndUserID(shop.ID, user.ID)
+		_, err = staffRepo.FindByShopIDAndUserID(ctx, shop.ID, user.ID)
 		assert.Error(t, err)
 		assert.Equal(t, "staff not found", err.Error())
 	})
@@ -467,10 +501,11 @@ func TestStaffRepository_FindByShopIDAndUserID(t *testing.T) {
 
 func TestStaffRepository_Create(t *testing.T) {
 	t.Run("creates staff successfully", func(t *testing.T) {
+		ctx := context.Background()
 		shopRepo, roleRepo, userRepo, staffRepo := setupStaffTest(t)
-		shop := createTestShop(t, shopRepo)
-		user := createTestUser(t, userRepo)
-		role := createTestRole(t, roleRepo, shop.ID)
+		shop := createTestShop(t, ctx, shopRepo)
+		user := createTestUser(t, ctx, userRepo)
+		role := createTestRole(t, ctx, roleRepo, shop.ID)
 
 		staff := entities.Staff{
 			UserID: user.ID,
@@ -478,7 +513,7 @@ func TestStaffRepository_Create(t *testing.T) {
 			ShopID: shop.ID,
 		}
 
-		created, err := staffRepo.Create(staff)
+		created, err := staffRepo.Create(ctx, staff)
 		require.NoError(t, err)
 		assert.NotZero(t, created.ID)
 		assert.Equal(t, user.ID, created.UserID)
@@ -491,17 +526,18 @@ func TestStaffRepository_Create(t *testing.T) {
 
 func TestStaffRepository_Update(t *testing.T) {
 	t.Run("updates staff successfully", func(t *testing.T) {
+		ctx := context.Background()
 		shopRepo, roleRepo, userRepo, staffRepo := setupStaffTest(t)
-		shop := createTestShop(t, shopRepo)
-		user := createTestUser(t, userRepo)
-		role1 := createTestRole(t, roleRepo, shop.ID)
+		shop := createTestShop(t, ctx, shopRepo)
+		user := createTestUser(t, ctx, userRepo)
+		role1 := createTestRole(t, ctx, roleRepo, shop.ID)
 
 		role2 := entities.Role{
 			Name:        "Updated Role",
 			Description: "Updated role description",
 			ShopID:      shop.ID,
 		}
-		createdRole2, err := roleRepo.Create(role2)
+		createdRole2, err := roleRepo.Create(ctx, role2)
 		require.NoError(t, err)
 
 		staff := entities.Staff{
@@ -510,7 +546,7 @@ func TestStaffRepository_Update(t *testing.T) {
 			ShopID: shop.ID,
 		}
 
-		created, err := staffRepo.Create(staff)
+		created, err := staffRepo.Create(ctx, staff)
 		require.NoError(t, err)
 
 		originalUpdatedAt := created.UpdatedAt
@@ -518,7 +554,7 @@ func TestStaffRepository_Update(t *testing.T) {
 
 		created.RoleID = createdRole2.ID
 
-		updated, err := staffRepo.Update(created)
+		updated, err := staffRepo.Update(ctx, created)
 		require.NoError(t, err)
 		assert.Equal(t, createdRole2.ID, updated.RoleID)
 		assert.True(t, updated.UpdatedAt.After(originalUpdatedAt))
@@ -527,10 +563,11 @@ func TestStaffRepository_Update(t *testing.T) {
 
 func TestStaffRepository_Delete(t *testing.T) {
 	t.Run("soft deletes staff successfully", func(t *testing.T) {
+		ctx := context.Background()
 		shopRepo, roleRepo, userRepo, staffRepo := setupStaffTest(t)
-		shop := createTestShop(t, shopRepo)
-		user := createTestUser(t, userRepo)
-		role := createTestRole(t, roleRepo, shop.ID)
+		shop := createTestShop(t, ctx, shopRepo)
+		user := createTestUser(t, ctx, userRepo)
+		role := createTestRole(t, ctx, roleRepo, shop.ID)
 
 		staff := entities.Staff{
 			UserID: user.ID,
@@ -538,25 +575,26 @@ func TestStaffRepository_Delete(t *testing.T) {
 			ShopID: shop.ID,
 		}
 
-		created, err := staffRepo.Create(staff)
+		created, err := staffRepo.Create(ctx, staff)
 		require.NoError(t, err)
 
-		err = staffRepo.Delete(created)
+		err = staffRepo.Delete(ctx, created)
 		require.NoError(t, err)
 
-		_, err = staffRepo.FindByID(created.ID)
+		_, err = staffRepo.FindByID(ctx, created.ID)
 		assert.Error(t, err)
 		assert.Equal(t, "staff not found", err.Error())
 
-		staffs := staffRepo.FindByShopID(shop.ID)
+		staffs := staffRepo.FindByShopID(ctx, shop.ID)
 		assert.Empty(t, staffs)
 	})
 
 	t.Run("can delete multiple staffs", func(t *testing.T) {
+		ctx := context.Background()
 		shopRepo, roleRepo, userRepo, staffRepo := setupStaffTest(t)
-		shop := createTestShop(t, shopRepo)
-		user := createTestUser(t, userRepo)
-		role := createTestRole(t, roleRepo, shop.ID)
+		shop := createTestShop(t, ctx, shopRepo)
+		user := createTestUser(t, ctx, userRepo)
+		role := createTestRole(t, ctx, roleRepo, shop.ID)
 
 		staff1 := entities.Staff{
 			UserID: user.ID,
@@ -569,17 +607,17 @@ func TestStaffRepository_Delete(t *testing.T) {
 			ShopID: shop.ID,
 		}
 
-		created1, err := staffRepo.Create(staff1)
+		created1, err := staffRepo.Create(ctx, staff1)
 		require.NoError(t, err)
-		created2, err := staffRepo.Create(staff2)
-		require.NoError(t, err)
-
-		err = staffRepo.Delete(created1)
-		require.NoError(t, err)
-		err = staffRepo.Delete(created2)
+		created2, err := staffRepo.Create(ctx, staff2)
 		require.NoError(t, err)
 
-		staffs := staffRepo.All()
+		err = staffRepo.Delete(ctx, created1)
+		require.NoError(t, err)
+		err = staffRepo.Delete(ctx, created2)
+		require.NoError(t, err)
+
+		staffs := staffRepo.All(ctx)
 		assert.Empty(t, staffs)
 	})
 }

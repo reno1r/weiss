@@ -1,6 +1,7 @@
 package usecases
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strings"
@@ -37,7 +38,7 @@ type RegisterResult struct {
 	User *entities.User
 }
 
-func (u *RegisterUsecase) Execute(param RegisterParam) (*RegisterResult, error) {
+func (u *RegisterUsecase) Execute(ctx context.Context, param RegisterParam) (*RegisterResult, error) {
 	if err := u.validator.Struct(param); err != nil {
 		var validationErrors []string
 		for _, err := range err.(validator.ValidationErrors) {
@@ -46,12 +47,12 @@ func (u *RegisterUsecase) Execute(param RegisterParam) (*RegisterResult, error) 
 		return nil, fmt.Errorf("validation failed: %s", strings.Join(validationErrors, ", "))
 	}
 
-	_, err := u.userRepository.FindByEmail(param.Email)
+	_, err := u.userRepository.FindByEmail(ctx, param.Email)
 	if err == nil {
 		return nil, errors.New("user with this email already exists")
 	}
 
-	_, err = u.userRepository.FindByPhone(param.Phone)
+	_, err = u.userRepository.FindByPhone(ctx, param.Phone)
 	if err == nil {
 		return nil, errors.New("user with this phone already exists")
 	}
@@ -68,7 +69,7 @@ func (u *RegisterUsecase) Execute(param RegisterParam) (*RegisterResult, error) 
 		Password: hashedPassword,
 	}
 
-	createdUser, err := u.userRepository.Create(user)
+	createdUser, err := u.userRepository.Create(ctx, user)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create user: %w", err)
 	}

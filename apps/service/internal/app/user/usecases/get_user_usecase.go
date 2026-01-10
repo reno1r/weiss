@@ -1,6 +1,7 @@
 package usecases
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
@@ -22,8 +23,8 @@ type GetUserResult struct {
 	User *entities.User
 }
 
-func (u *GetUserUsecase) Execute(id uint64) (*GetUserResult, error) {
-	user, err := u.userRepository.FindByID(id)
+func (u *GetUserUsecase) Execute(ctx context.Context, id uint64) (*GetUserResult, error) {
+	user, err := u.userRepository.FindByID(ctx, id)
 	if err != nil {
 		if err.Error() == "user not found" {
 			return nil, errors.New("user not found")

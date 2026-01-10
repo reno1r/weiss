@@ -1,6 +1,7 @@
 package usecases
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -20,14 +21,16 @@ func setupListShopsTest(t *testing.T) (*ListShopsUsecase, repositories.ShopRepos
 
 func TestListShopsUsecase_Execute(t *testing.T) {
 	t.Run("returns empty list when no shops exist", func(t *testing.T) {
+		ctx := context.Background()
 		usecase, _ := setupListShopsTest(t)
 
-		result := usecase.Execute()
+		result := usecase.Execute(ctx)
 		assert.NotNil(t, result)
 		assert.Empty(t, result.Shops)
 	})
 
 	t.Run("returns all shops", func(t *testing.T) {
+		ctx := context.Background()
 		usecase, shopRepo := setupListShopsTest(t)
 
 		shop1 := entities.Shop{
@@ -49,12 +52,12 @@ func TestListShopsUsecase_Execute(t *testing.T) {
 			Logo:        "logo2.png",
 		}
 
-		_, err := shopRepo.Create(shop1)
+		_, err := shopRepo.Create(ctx, shop1)
 		require.NoError(t, err)
-		_, err = shopRepo.Create(shop2)
+		_, err = shopRepo.Create(ctx, shop2)
 		require.NoError(t, err)
 
-		result := usecase.Execute()
+		result := usecase.Execute(ctx)
 		assert.NotNil(t, result)
 		assert.Len(t, result.Shops, 2)
 		assert.Equal(t, "Shop One", result.Shops[0].Name)
@@ -62,6 +65,7 @@ func TestListShopsUsecase_Execute(t *testing.T) {
 	})
 
 	t.Run("excludes soft deleted shops", func(t *testing.T) {
+		ctx := context.Background()
 		usecase, shopRepo := setupListShopsTest(t)
 
 		shop := entities.Shop{
@@ -74,13 +78,13 @@ func TestListShopsUsecase_Execute(t *testing.T) {
 			Logo:        "deleted.png",
 		}
 
-		created, err := shopRepo.Create(shop)
+		created, err := shopRepo.Create(ctx, shop)
 		require.NoError(t, err)
 
-		err = shopRepo.Delete(created)
+		err = shopRepo.Delete(ctx, created)
 		require.NoError(t, err)
 
-		result := usecase.Execute()
+		result := usecase.Execute(ctx)
 		assert.NotNil(t, result)
 		assert.Empty(t, result.Shops)
 	})

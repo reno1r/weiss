@@ -1,6 +1,8 @@
 package usecases
 
 import (
+	"context"
+
 	"github.com/reno1r/weiss/apps/service/internal/app/shop/entities"
 	"github.com/reno1r/weiss/apps/service/internal/app/shop/repositories"
 )
@@ -19,8 +21,8 @@ type ListShopsResult struct {
 	Shops []entities.Shop
 }
 
-func (u *ListShopsUsecase) Execute() *ListShopsResult {
-	shops := u.shopRepository.All()
+func (u *ListShopsUsecase) Execute(ctx context.Context) *ListShopsResult {
+	shops := u.shopRepository.All(ctx)
 	return &ListShopsResult{
 		Shops: shops,
 	}

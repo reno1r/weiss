@@ -1,6 +1,7 @@
 package usecases
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -38,7 +39,7 @@ type GetStaffsResult struct {
 	Staffs []StaffInfo
 }
 
-func (u *GetStaffsUsecase) Execute(params GetStaffsParam) (*GetStaffsResult, error) {
+func (u *GetStaffsUsecase) Execute(ctx context.Context, params GetStaffsParam) (*GetStaffsResult, error) {
 	if err := u.validator.Struct(params); err != nil {
 		var validationErrors []string
 		for _, err := range err.(validator.ValidationErrors) {
@@ -47,7 +48,7 @@ func (u *GetStaffsUsecase) Execute(params GetStaffsParam) (*GetStaffsResult, err
 		return nil, fmt.Errorf("validation failed: %s", strings.Join(validationErrors, ", "))
 	}
 
-	staffs := u.staffRepository.FindByShopID(params.Shop.ID)
+	staffs := u.staffRepository.FindByShopID(ctx, params.Shop.ID)
 
 	staffsResult := make([]StaffInfo, len(staffs))
 	for i, staff := range staffs {

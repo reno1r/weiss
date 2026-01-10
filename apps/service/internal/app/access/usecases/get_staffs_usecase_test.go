@@ -1,6 +1,7 @@
 package usecases
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -25,7 +26,7 @@ func setupGetStaffsTest(t *testing.T) (*GetStaffsUsecase, accessrepositories.Sta
 	return usecase, staffRepo, shopRepo, roleRepo, userRepo
 }
 
-func createTestShop(t *testing.T, shopRepo shoprepositories.ShopRepository) shopentities.Shop {
+func createTestShop(t *testing.T, ctx context.Context, shopRepo shoprepositories.ShopRepository) shopentities.Shop {
 	shop := shopentities.Shop{
 		Name:        "Test Shop",
 		Description: "Test shop description",
@@ -35,40 +36,41 @@ func createTestShop(t *testing.T, shopRepo shoprepositories.ShopRepository) shop
 		Website:     "https://test.com",
 		Logo:        "test.png",
 	}
-	created, err := shopRepo.Create(shop)
+	created, err := shopRepo.Create(ctx, shop)
 	require.NoError(t, err)
 	return created
 }
 
-func createTestUser(t *testing.T, userRepo userrepositories.UserRepository) userentities.User {
+func createTestUser(t *testing.T, ctx context.Context, userRepo userrepositories.UserRepository) userentities.User {
 	user := userentities.User{
 		FullName: "Test User",
 		Phone:    "1234567890",
 		Email:    "test@example.com",
 		Password: "hashedpassword",
 	}
-	created, err := userRepo.Create(user)
+	created, err := userRepo.Create(ctx, user)
 	require.NoError(t, err)
 	return created
 }
 
-func createTestRole(t *testing.T, roleRepo accessrepositories.RoleRepository, shopID uint64) accessentities.Role {
+func createTestRole(t *testing.T, ctx context.Context, roleRepo accessrepositories.RoleRepository, shopID uint64) accessentities.Role {
 	role := accessentities.Role{
 		Name:        "Test Role",
 		Description: "Test role description",
 		ShopID:      shopID,
 	}
-	created, err := roleRepo.Create(role)
+	created, err := roleRepo.Create(ctx, role)
 	require.NoError(t, err)
 	return created
 }
 
 func TestGetStaffsUsecase_Execute(t *testing.T) {
 	t.Run("returns empty list when no staffs exist", func(t *testing.T) {
+		ctx := context.Background()
 		usecase, _, shopRepo, _, _ := setupGetStaffsTest(t)
-		shop := createTestShop(t, shopRepo)
+		shop := createTestShop(t, ctx, shopRepo)
 
-		result, err := usecase.Execute(GetStaffsParam{
+		result, err := usecase.Execute(ctx, GetStaffsParam{
 			Shop: &shop,
 		})
 		require.NoError(t, err)
@@ -78,18 +80,19 @@ func TestGetStaffsUsecase_Execute(t *testing.T) {
 	})
 
 	t.Run("returns all staffs for a shop", func(t *testing.T) {
+		ctx := context.Background()
 		usecase, staffRepo, shopRepo, roleRepo, userRepo := setupGetStaffsTest(t)
-		shop := createTestShop(t, shopRepo)
-		user1 := createTestUser(t, userRepo)
+		shop := createTestShop(t, ctx, shopRepo)
+		user1 := createTestUser(t, ctx, userRepo)
 		user2 := userentities.User{
 			FullName: "Another User",
 			Phone:    "0987654321",
 			Email:    "another@example.com",
 			Password: "hashedpassword",
 		}
-		createdUser2, err := userRepo.Create(user2)
+		createdUser2, err := userRepo.Create(ctx, user2)
 		require.NoError(t, err)
-		role := createTestRole(t, roleRepo, shop.ID)
+		role := createTestRole(t, ctx, roleRepo, shop.ID)
 
 		staff1 := accessentities.Staff{
 			UserID: user1.ID,
@@ -102,12 +105,12 @@ func TestGetStaffsUsecase_Execute(t *testing.T) {
 			ShopID: shop.ID,
 		}
 
-		_, err = staffRepo.Create(staff1)
+		_, err = staffRepo.Create(ctx, staff1)
 		require.NoError(t, err)
-		_, err = staffRepo.Create(staff2)
+		_, err = staffRepo.Create(ctx, staff2)
 		require.NoError(t, err)
 
-		result, err := usecase.Execute(GetStaffsParam{
+		result, err := usecase.Execute(ctx, GetStaffsParam{
 			Shop: &shop,
 		})
 		require.NoError(t, err)
@@ -121,8 +124,9 @@ func TestGetStaffsUsecase_Execute(t *testing.T) {
 	})
 
 	t.Run("returns only staffs for the specified shop", func(t *testing.T) {
+		ctx := context.Background()
 		usecase, staffRepo, shopRepo, roleRepo, userRepo := setupGetStaffsTest(t)
-		shop1 := createTestShop(t, shopRepo)
+		shop1 := createTestShop(t, ctx, shopRepo)
 		shop2 := shopentities.Shop{
 			Name:        "Another Shop",
 			Description: "Another shop description",
@@ -132,12 +136,12 @@ func TestGetStaffsUsecase_Execute(t *testing.T) {
 			Website:     "https://another.com",
 			Logo:        "another.png",
 		}
-		createdShop2, err := shopRepo.Create(shop2)
+		createdShop2, err := shopRepo.Create(ctx, shop2)
 		require.NoError(t, err)
 
-		user := createTestUser(t, userRepo)
-		role1 := createTestRole(t, roleRepo, shop1.ID)
-		role2 := createTestRole(t, roleRepo, createdShop2.ID)
+		user := createTestUser(t, ctx, userRepo)
+		role1 := createTestRole(t, ctx, roleRepo, shop1.ID)
+		role2 := createTestRole(t, ctx, roleRepo, createdShop2.ID)
 
 		staff1 := accessentities.Staff{
 			UserID: user.ID,
@@ -150,12 +154,12 @@ func TestGetStaffsUsecase_Execute(t *testing.T) {
 			ShopID: createdShop2.ID,
 		}
 
-		_, err = staffRepo.Create(staff1)
+		_, err = staffRepo.Create(ctx, staff1)
 		require.NoError(t, err)
-		_, err = staffRepo.Create(staff2)
+		_, err = staffRepo.Create(ctx, staff2)
 		require.NoError(t, err)
 
-		result, err := usecase.Execute(GetStaffsParam{
+		result, err := usecase.Execute(ctx, GetStaffsParam{
 			Shop: &shop1,
 		})
 		require.NoError(t, err)
@@ -166,9 +170,10 @@ func TestGetStaffsUsecase_Execute(t *testing.T) {
 	})
 
 	t.Run("returns validation error when shop is nil", func(t *testing.T) {
+		ctx := context.Background()
 		usecase, _, _, _, _ := setupGetStaffsTest(t)
 
-		result, err := usecase.Execute(GetStaffsParam{
+		result, err := usecase.Execute(ctx, GetStaffsParam{
 			Shop: nil,
 		})
 		assert.Error(t, err)
@@ -177,10 +182,11 @@ func TestGetStaffsUsecase_Execute(t *testing.T) {
 	})
 
 	t.Run("excludes soft deleted staffs", func(t *testing.T) {
+		ctx := context.Background()
 		usecase, staffRepo, shopRepo, roleRepo, userRepo := setupGetStaffsTest(t)
-		shop := createTestShop(t, shopRepo)
-		user := createTestUser(t, userRepo)
-		role := createTestRole(t, roleRepo, shop.ID)
+		shop := createTestShop(t, ctx, shopRepo)
+		user := createTestUser(t, ctx, userRepo)
+		role := createTestRole(t, ctx, roleRepo, shop.ID)
 
 		staff := accessentities.Staff{
 			UserID: user.ID,
@@ -188,13 +194,13 @@ func TestGetStaffsUsecase_Execute(t *testing.T) {
 			ShopID: shop.ID,
 		}
 
-		created, err := staffRepo.Create(staff)
+		created, err := staffRepo.Create(ctx, staff)
 		require.NoError(t, err)
 
-		err = staffRepo.Delete(created)
+		err = staffRepo.Delete(ctx, created)
 		require.NoError(t, err)
 
-		result, err := usecase.Execute(GetStaffsParam{
+		result, err := usecase.Execute(ctx, GetStaffsParam{
 			Shop: &shop,
 		})
 		require.NoError(t, err)
@@ -202,4 +208,3 @@ func TestGetStaffsUsecase_Execute(t *testing.T) {
 		assert.Empty(t, result.Staffs)
 	})
 }
-

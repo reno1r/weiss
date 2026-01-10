@@ -1,6 +1,7 @@
 package usecases
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -20,6 +21,7 @@ func setupGetUserTest(t *testing.T) (*GetUserUsecase, repositories.UserRepositor
 
 func TestGetUserUsecase_Execute(t *testing.T) {
 	t.Run("returns user when found", func(t *testing.T) {
+		ctx := context.Background()
 		usecase, userRepo := setupGetUserTest(t)
 
 		user := entities.User{
@@ -29,10 +31,10 @@ func TestGetUserUsecase_Execute(t *testing.T) {
 			Password: "hashedpassword",
 		}
 
-		created, err := userRepo.Create(user)
+		created, err := userRepo.Create(ctx, user)
 		require.NoError(t, err)
 
-		result, err := usecase.Execute(created.ID)
+		result, err := usecase.Execute(ctx, created.ID)
 		require.NoError(t, err)
 		assert.NotNil(t, result.User)
 		assert.Equal(t, created.ID, result.User.ID)
@@ -42,15 +44,17 @@ func TestGetUserUsecase_Execute(t *testing.T) {
 	})
 
 	t.Run("returns error when user not found", func(t *testing.T) {
+		ctx := context.Background()
 		usecase, _ := setupGetUserTest(t)
 
-		result, err := usecase.Execute(999)
+		result, err := usecase.Execute(ctx, 999)
 		assert.Error(t, err)
 		assert.Equal(t, "user not found", err.Error())
 		assert.Nil(t, result)
 	})
 
 	t.Run("does not find soft deleted users", func(t *testing.T) {
+		ctx := context.Background()
 		usecase, userRepo := setupGetUserTest(t)
 
 		user := entities.User{
@@ -60,16 +64,15 @@ func TestGetUserUsecase_Execute(t *testing.T) {
 			Password: "hashedpassword",
 		}
 
-		created, err := userRepo.Create(user)
+		created, err := userRepo.Create(ctx, user)
 		require.NoError(t, err)
 
-		err = userRepo.Delete(created)
+		err = userRepo.Delete(ctx, created)
 		require.NoError(t, err)
 
-		result, err := usecase.Execute(created.ID)
+		result, err := usecase.Execute(ctx, created.ID)
 		assert.Error(t, err)
 		assert.Equal(t, "user not found", err.Error())
 		assert.Nil(t, result)
 	})
 }
-

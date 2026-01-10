@@ -1,6 +1,7 @@
 package usecases
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -34,7 +35,7 @@ type AssignStaffResult struct {
 	Staff *accessentities.Staff
 }
 
-func (u *AssignStaffUsecase) Execute(params AssignStaffParam) (*AssignStaffResult, error) {
+func (u *AssignStaffUsecase) Execute(ctx context.Context, params AssignStaffParam) (*AssignStaffResult, error) {
 	if err := u.validator.Struct(params); err != nil {
 		var validationErrors []string
 		for _, err := range err.(validator.ValidationErrors) {
@@ -44,7 +45,7 @@ func (u *AssignStaffUsecase) Execute(params AssignStaffParam) (*AssignStaffResul
 	}
 
 	// Check if staff already exists
-	_, err := u.staffRepository.FindByShopIDAndUserID(params.Shop.ID, params.User.ID)
+	_, err := u.staffRepository.FindByShopIDAndUserID(ctx, params.Shop.ID, params.User.ID)
 	if err == nil {
 		return nil, fmt.Errorf("staff already assigned to this shop")
 	}
@@ -55,13 +56,13 @@ func (u *AssignStaffUsecase) Execute(params AssignStaffParam) (*AssignStaffResul
 		RoleID: params.Role.ID,
 	}
 
-	createdStaff, err := u.staffRepository.Create(staff)
+	createdStaff, err := u.staffRepository.Create(ctx, staff)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create staff: %w", err)
 	}
 
 	// Reload with relations
-	staffWithRelations, err := u.staffRepository.FindByID(createdStaff.ID)
+	staffWithRelations, err := u.staffRepository.FindByID(ctx, createdStaff.ID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load staff: %w", err)
 	}

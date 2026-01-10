@@ -63,7 +63,8 @@ func (h *RegisterHandler) Handle(c fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "invalid request body")
 	}
 
-	result, err := h.registerUsecase.Execute(usecases.RegisterParam{
+	ctx := c.Context()
+	result, err := h.registerUsecase.Execute(ctx, usecases.RegisterParam{
 		FullName: request.FulllName,
 		Email:    request.Email,
 		Phone:    request.Phone,

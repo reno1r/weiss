@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"context"
 	"errors"
 
 	"gorm.io/gorm"
@@ -18,18 +19,18 @@ func NewStaffRepository(db *gorm.DB) StaffRepository {
 	}
 }
 
-func (r *staffRepository) All() []entities.Staff {
+func (r *staffRepository) All(ctx context.Context) []entities.Staff {
 	var staffs []entities.Staff
-	r.db.Find(&staffs)
+	r.db.WithContext(ctx).Find(&staffs)
 	for i := range staffs {
-		r.db.Preload("User").Preload("Role").Preload("Shop").Find(&staffs[i])
+		r.db.WithContext(ctx).Preload("User").Preload("Role").Preload("Shop").Find(&staffs[i])
 	}
 	return staffs
 }
 
-func (r *staffRepository) FindByID(id uint64) (entities.Staff, error) {
+func (r *staffRepository) FindByID(ctx context.Context, id uint64) (entities.Staff, error) {
 	var staff entities.Staff
-	err := r.db.Where("id = ?", id).Preload("User").Preload("Role").Preload("Shop").First(&staff).Error
+	err := r.db.WithContext(ctx).Where("id = ?", id).Preload("User").Preload("Role").Preload("Shop").First(&staff).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return staff, errors.New("staff not found")
@@ -39,30 +40,30 @@ func (r *staffRepository) FindByID(id uint64) (entities.Staff, error) {
 	return staff, nil
 }
 
-func (r *staffRepository) FindByShopID(shopID uint64) []entities.Staff {
+func (r *staffRepository) FindByShopID(ctx context.Context, shopID uint64) []entities.Staff {
 	var staffs []entities.Staff
-	r.db.Where("shop_id = ?", shopID).Find(&staffs)
+	r.db.WithContext(ctx).Where("shop_id = ?", shopID).Find(&staffs)
 	for i := range staffs {
-		r.db.Preload("User").Preload("Role").Preload("Shop").Find(&staffs[i])
+		r.db.WithContext(ctx).Preload("User").Preload("Role").Preload("Shop").Find(&staffs[i])
 	}
 	return staffs
 }
 
-func (r *staffRepository) FindByUserID(userID uint64) []entities.Staff {
+func (r *staffRepository) FindByUserID(ctx context.Context, userID uint64) []entities.Staff {
 	var staffs []entities.Staff
-	r.db.Where("user_id = ?", userID).Find(&staffs)
+	r.db.WithContext(ctx).Where("user_id = ?", userID).Find(&staffs)
 	return staffs
 }
 
-func (r *staffRepository) FindByRoleID(roleID uint64) []entities.Staff {
+func (r *staffRepository) FindByRoleID(ctx context.Context, roleID uint64) []entities.Staff {
 	var staffs []entities.Staff
-	r.db.Where("role_id = ?", roleID).Find(&staffs)
+	r.db.WithContext(ctx).Where("role_id = ?", roleID).Find(&staffs)
 	return staffs
 }
 
-func (r *staffRepository) FindByShopIDAndUserID(shopID uint64, userID uint64) (entities.Staff, error) {
+func (r *staffRepository) FindByShopIDAndUserID(ctx context.Context, shopID uint64, userID uint64) (entities.Staff, error) {
 	var staff entities.Staff
-	err := r.db.Where("shop_id = ? AND user_id = ?", shopID, userID).First(&staff).Error
+	err := r.db.WithContext(ctx).Where("shop_id = ? AND user_id = ?", shopID, userID).First(&staff).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return staff, errors.New("staff not found")
@@ -72,22 +73,22 @@ func (r *staffRepository) FindByShopIDAndUserID(shopID uint64, userID uint64) (e
 	return staff, nil
 }
 
-func (r *staffRepository) Create(staff entities.Staff) (entities.Staff, error) {
-	err := r.db.Create(&staff).Error
+func (r *staffRepository) Create(ctx context.Context, staff entities.Staff) (entities.Staff, error) {
+	err := r.db.WithContext(ctx).Create(&staff).Error
 	if err != nil {
 		return staff, err
 	}
 	return staff, nil
 }
 
-func (r *staffRepository) Update(staff entities.Staff) (entities.Staff, error) {
-	err := r.db.Save(&staff).Error
+func (r *staffRepository) Update(ctx context.Context, staff entities.Staff) (entities.Staff, error) {
+	err := r.db.WithContext(ctx).Save(&staff).Error
 	if err != nil {
 		return staff, err
 	}
 	return staff, nil
 }
 
-func (r *staffRepository) Delete(staff entities.Staff) error {
-	return r.db.Delete(&staff).Error
+func (r *staffRepository) Delete(ctx context.Context, staff entities.Staff) error {
+	return r.db.WithContext(ctx).Delete(&staff).Error
 }

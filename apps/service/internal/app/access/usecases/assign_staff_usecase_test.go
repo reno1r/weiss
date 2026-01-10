@@ -1,6 +1,7 @@
 package usecases
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -25,15 +26,15 @@ func setupAssignStaffTest(t *testing.T) (*AssignStaffUsecase, accessrepositories
 	return usecase, staffRepo, shopRepo, roleRepo, userRepo
 }
 
-
 func TestAssignStaffUsecase_Execute(t *testing.T) {
 	t.Run("assigns staff successfully", func(t *testing.T) {
+		ctx := context.Background()
 		usecase, staffRepo, shopRepo, roleRepo, userRepo := setupAssignStaffTest(t)
-		shop := createTestShop(t, shopRepo)
-		user := createTestUser(t, userRepo)
-		role := createTestRole(t, roleRepo, shop.ID)
+		shop := createTestShop(t, ctx, shopRepo)
+		user := createTestUser(t, ctx, userRepo)
+		role := createTestRole(t, ctx, roleRepo, shop.ID)
 
-		result, err := usecase.Execute(AssignStaffParam{
+		result, err := usecase.Execute(ctx, AssignStaffParam{
 			User: &user,
 			Shop: &shop,
 			Role: &role,
@@ -48,7 +49,7 @@ func TestAssignStaffUsecase_Execute(t *testing.T) {
 		assert.NotNil(t, result.Staff.Shop)
 
 		// Verify staff was created in database
-		found, err := staffRepo.FindByID(result.Staff.ID)
+		found, err := staffRepo.FindByID(ctx, result.Staff.ID)
 		require.NoError(t, err)
 		assert.Equal(t, user.ID, found.UserID)
 		assert.Equal(t, shop.ID, found.ShopID)
@@ -56,13 +57,14 @@ func TestAssignStaffUsecase_Execute(t *testing.T) {
 	})
 
 	t.Run("returns error when staff already assigned", func(t *testing.T) {
+		ctx := context.Background()
 		usecase, _, shopRepo, roleRepo, userRepo := setupAssignStaffTest(t)
-		shop := createTestShop(t, shopRepo)
-		user := createTestUser(t, userRepo)
-		role := createTestRole(t, roleRepo, shop.ID)
+		shop := createTestShop(t, ctx, shopRepo)
+		user := createTestUser(t, ctx, userRepo)
+		role := createTestRole(t, ctx, roleRepo, shop.ID)
 
 		// Assign staff first time
-		_, err := usecase.Execute(AssignStaffParam{
+		_, err := usecase.Execute(ctx, AssignStaffParam{
 			User: &user,
 			Shop: &shop,
 			Role: &role,
@@ -70,7 +72,7 @@ func TestAssignStaffUsecase_Execute(t *testing.T) {
 		require.NoError(t, err)
 
 		// Try to assign same user to same shop again
-		result, err := usecase.Execute(AssignStaffParam{
+		result, err := usecase.Execute(ctx, AssignStaffParam{
 			User: &user,
 			Shop: &shop,
 			Role: &role,
@@ -81,8 +83,9 @@ func TestAssignStaffUsecase_Execute(t *testing.T) {
 	})
 
 	t.Run("allows same user to be assigned to different shops", func(t *testing.T) {
+		ctx := context.Background()
 		usecase, _, shopRepo, roleRepo, userRepo := setupAssignStaffTest(t)
-		shop1 := createTestShop(t, shopRepo)
+		shop1 := createTestShop(t, ctx, shopRepo)
 		shop2 := shopentities.Shop{
 			Name:        "Another Shop",
 			Description: "Another shop description",
@@ -92,15 +95,15 @@ func TestAssignStaffUsecase_Execute(t *testing.T) {
 			Website:     "https://another.com",
 			Logo:        "another.png",
 		}
-		createdShop2, err := shopRepo.Create(shop2)
+		createdShop2, err := shopRepo.Create(ctx, shop2)
 		require.NoError(t, err)
 
-		user := createTestUser(t, userRepo)
-		role1 := createTestRole(t, roleRepo, shop1.ID)
-		role2 := createTestRole(t, roleRepo, createdShop2.ID)
+		user := createTestUser(t, ctx, userRepo)
+		role1 := createTestRole(t, ctx, roleRepo, shop1.ID)
+		role2 := createTestRole(t, ctx, roleRepo, createdShop2.ID)
 
 		// Assign user to shop1
-		result1, err := usecase.Execute(AssignStaffParam{
+		result1, err := usecase.Execute(ctx, AssignStaffParam{
 			User: &user,
 			Shop: &shop1,
 			Role: &role1,
@@ -109,7 +112,7 @@ func TestAssignStaffUsecase_Execute(t *testing.T) {
 		assert.NotNil(t, result1.Staff)
 
 		// Assign same user to shop2
-		result2, err := usecase.Execute(AssignStaffParam{
+		result2, err := usecase.Execute(ctx, AssignStaffParam{
 			User: &user,
 			Shop: &createdShop2,
 			Role: &role2,
@@ -120,21 +123,22 @@ func TestAssignStaffUsecase_Execute(t *testing.T) {
 	})
 
 	t.Run("allows different users to be assigned to same shop", func(t *testing.T) {
+		ctx := context.Background()
 		usecase, _, shopRepo, roleRepo, userRepo := setupAssignStaffTest(t)
-		shop := createTestShop(t, shopRepo)
-		user1 := createTestUser(t, userRepo)
+		shop := createTestShop(t, ctx, shopRepo)
+		user1 := createTestUser(t, ctx, userRepo)
 		user2 := userentities.User{
 			FullName: "Another User",
 			Phone:    "0987654321",
 			Email:    "another@example.com",
 			Password: "hashedpassword",
 		}
-		createdUser2, err := userRepo.Create(user2)
+		createdUser2, err := userRepo.Create(ctx, user2)
 		require.NoError(t, err)
-		role := createTestRole(t, roleRepo, shop.ID)
+		role := createTestRole(t, ctx, roleRepo, shop.ID)
 
 		// Assign user1 to shop
-		result1, err := usecase.Execute(AssignStaffParam{
+		result1, err := usecase.Execute(ctx, AssignStaffParam{
 			User: &user1,
 			Shop: &shop,
 			Role: &role,
@@ -143,7 +147,7 @@ func TestAssignStaffUsecase_Execute(t *testing.T) {
 		assert.NotNil(t, result1.Staff)
 
 		// Assign user2 to same shop
-		result2, err := usecase.Execute(AssignStaffParam{
+		result2, err := usecase.Execute(ctx, AssignStaffParam{
 			User: &createdUser2,
 			Shop: &shop,
 			Role: &role,
@@ -154,11 +158,12 @@ func TestAssignStaffUsecase_Execute(t *testing.T) {
 	})
 
 	t.Run("returns validation error when user is nil", func(t *testing.T) {
+		ctx := context.Background()
 		usecase, _, shopRepo, roleRepo, _ := setupAssignStaffTest(t)
-		shop := createTestShop(t, shopRepo)
-		role := createTestRole(t, roleRepo, shop.ID)
+		shop := createTestShop(t, ctx, shopRepo)
+		role := createTestRole(t, ctx, roleRepo, shop.ID)
 
-		result, err := usecase.Execute(AssignStaffParam{
+		result, err := usecase.Execute(ctx, AssignStaffParam{
 			User: nil,
 			Shop: &shop,
 			Role: &role,
@@ -169,15 +174,16 @@ func TestAssignStaffUsecase_Execute(t *testing.T) {
 	})
 
 	t.Run("returns validation error when shop is nil", func(t *testing.T) {
+		ctx := context.Background()
 		usecase, _, _, _, userRepo := setupAssignStaffTest(t)
-		user := createTestUser(t, userRepo)
+		user := createTestUser(t, ctx, userRepo)
 		role := accessentities.Role{
 			Name:        "Test Role",
 			Description: "Test role description",
 			ShopID:      1,
 		}
 
-		result, err := usecase.Execute(AssignStaffParam{
+		result, err := usecase.Execute(ctx, AssignStaffParam{
 			User: &user,
 			Shop: nil,
 			Role: &role,
@@ -188,12 +194,12 @@ func TestAssignStaffUsecase_Execute(t *testing.T) {
 	})
 
 	t.Run("returns validation error when role is nil", func(t *testing.T) {
-		usecase, _, shopRepo, roleRepo, userRepo := setupAssignStaffTest(t)
-		_ = roleRepo // suppress unused variable warning
-		shop := createTestShop(t, shopRepo)
-		user := createTestUser(t, userRepo)
+		ctx := context.Background()
+		usecase, _, shopRepo, _, userRepo := setupAssignStaffTest(t)
+		shop := createTestShop(t, ctx, shopRepo)
+		user := createTestUser(t, ctx, userRepo)
 
-		result, err := usecase.Execute(AssignStaffParam{
+		result, err := usecase.Execute(ctx, AssignStaffParam{
 			User: &user,
 			Shop: &shop,
 			Role: nil,
@@ -203,4 +209,3 @@ func TestAssignStaffUsecase_Execute(t *testing.T) {
 		assert.Nil(t, result)
 	})
 }
-

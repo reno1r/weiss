@@ -1,6 +1,7 @@
 package usecases
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -37,6 +38,7 @@ func setupLoginTest(t *testing.T) (*LoginUsecase, repositories.UserRepository) {
 
 func TestLoginUsecase_Execute(t *testing.T) {
 	t.Run("logs in successfully with email", func(t *testing.T) {
+		ctx := context.Background()
 		usecase, userRepo := setupLoginTest(t)
 
 		password := "password123"
@@ -49,7 +51,7 @@ func TestLoginUsecase_Execute(t *testing.T) {
 			Email:    "john@example.com",
 			Password: hashedPassword,
 		}
-		createdUser, err := userRepo.Create(user)
+		createdUser, err := userRepo.Create(ctx, user)
 		require.NoError(t, err)
 
 		param := LoginParam{
@@ -57,7 +59,7 @@ func TestLoginUsecase_Execute(t *testing.T) {
 			Password: password,
 		}
 
-		resp, err := usecase.Execute(param)
+		resp, err := usecase.Execute(ctx, param)
 		require.NoError(t, err)
 		assert.Equal(t, createdUser.ID, resp.User.ID)
 		assert.Equal(t, "John Doe", resp.User.FullName)
@@ -67,6 +69,7 @@ func TestLoginUsecase_Execute(t *testing.T) {
 	})
 
 	t.Run("logs in successfully with phone", func(t *testing.T) {
+		ctx := context.Background()
 		usecase, userRepo := setupLoginTest(t)
 
 		password := "password123"
@@ -79,7 +82,7 @@ func TestLoginUsecase_Execute(t *testing.T) {
 			Email:    "john@example.com",
 			Password: hashedPassword,
 		}
-		createdUser, err := userRepo.Create(user)
+		createdUser, err := userRepo.Create(ctx, user)
 		require.NoError(t, err)
 
 		param := LoginParam{
@@ -87,7 +90,7 @@ func TestLoginUsecase_Execute(t *testing.T) {
 			Password: password,
 		}
 
-		resp, err := usecase.Execute(param)
+		resp, err := usecase.Execute(ctx, param)
 		require.NoError(t, err)
 		assert.Equal(t, createdUser.ID, resp.User.ID)
 		assert.NotEmpty(t, resp.AccessToken)
@@ -95,6 +98,7 @@ func TestLoginUsecase_Execute(t *testing.T) {
 	})
 
 	t.Run("returns error when email not found", func(t *testing.T) {
+		ctx := context.Background()
 		usecase, _ := setupLoginTest(t)
 
 		param := LoginParam{
@@ -102,13 +106,14 @@ func TestLoginUsecase_Execute(t *testing.T) {
 			Password: "password123",
 		}
 
-		resp, err := usecase.Execute(param)
+		resp, err := usecase.Execute(ctx, param)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "invalid credentials")
 		assert.Nil(t, resp)
 	})
 
 	t.Run("returns error when phone not found", func(t *testing.T) {
+		ctx := context.Background()
 		usecase, _ := setupLoginTest(t)
 
 		param := LoginParam{
@@ -116,13 +121,14 @@ func TestLoginUsecase_Execute(t *testing.T) {
 			Password: "password123",
 		}
 
-		resp, err := usecase.Execute(param)
+		resp, err := usecase.Execute(ctx, param)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "invalid credentials")
 		assert.Nil(t, resp)
 	})
 
 	t.Run("returns error when password is incorrect", func(t *testing.T) {
+		ctx := context.Background()
 		usecase, userRepo := setupLoginTest(t)
 
 		password := "password123"
@@ -135,7 +141,7 @@ func TestLoginUsecase_Execute(t *testing.T) {
 			Email:    "john@example.com",
 			Password: hashedPassword,
 		}
-		_, err = userRepo.Create(user)
+		_, err = userRepo.Create(ctx, user)
 		require.NoError(t, err)
 
 		param := LoginParam{
@@ -143,13 +149,14 @@ func TestLoginUsecase_Execute(t *testing.T) {
 			Password: "wrongpassword",
 		}
 
-		resp, err := usecase.Execute(param)
+		resp, err := usecase.Execute(ctx, param)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "invalid credentials")
 		assert.Nil(t, resp)
 	})
 
 	t.Run("validates password is required", func(t *testing.T) {
+		ctx := context.Background()
 		usecase, _ := setupLoginTest(t)
 
 		param := LoginParam{
@@ -157,13 +164,14 @@ func TestLoginUsecase_Execute(t *testing.T) {
 			Password: "",
 		}
 
-		resp, err := usecase.Execute(param)
+		resp, err := usecase.Execute(ctx, param)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "validation failed")
 		assert.Nil(t, resp)
 	})
 
 	t.Run("validates email format when provided", func(t *testing.T) {
+		ctx := context.Background()
 		usecase, _ := setupLoginTest(t)
 
 		param := LoginParam{
@@ -171,13 +179,14 @@ func TestLoginUsecase_Execute(t *testing.T) {
 			Password: "password123",
 		}
 
-		resp, err := usecase.Execute(param)
+		resp, err := usecase.Execute(ctx, param)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "validation failed")
 		assert.Nil(t, resp)
 	})
 
 	t.Run("validates phone length when provided", func(t *testing.T) {
+		ctx := context.Background()
 		usecase, _ := setupLoginTest(t)
 
 		param := LoginParam{
@@ -185,13 +194,14 @@ func TestLoginUsecase_Execute(t *testing.T) {
 			Password: "password123",
 		}
 
-		resp, err := usecase.Execute(param)
+		resp, err := usecase.Execute(ctx, param)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "validation failed")
 		assert.Nil(t, resp)
 	})
 
 	t.Run("returns error when both email and phone are empty", func(t *testing.T) {
+		ctx := context.Background()
 		usecase, _ := setupLoginTest(t)
 
 		param := LoginParam{
@@ -200,13 +210,14 @@ func TestLoginUsecase_Execute(t *testing.T) {
 			Password: "password123",
 		}
 
-		resp, err := usecase.Execute(param)
+		resp, err := usecase.Execute(ctx, param)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "email or phone is required")
 		assert.Nil(t, resp)
 	})
 
 	t.Run("generates valid tokens", func(t *testing.T) {
+		ctx := context.Background()
 		usecase, userRepo := setupLoginTest(t)
 
 		password := "password123"
@@ -219,7 +230,7 @@ func TestLoginUsecase_Execute(t *testing.T) {
 			Email:    "john@example.com",
 			Password: hashedPassword,
 		}
-		createdUser, err := userRepo.Create(user)
+		createdUser, err := userRepo.Create(ctx, user)
 		require.NoError(t, err)
 
 		param := LoginParam{
@@ -227,7 +238,7 @@ func TestLoginUsecase_Execute(t *testing.T) {
 			Password: password,
 		}
 
-		resp, err := usecase.Execute(param)
+		resp, err := usecase.Execute(ctx, param)
 		require.NoError(t, err)
 
 		config := &config.Config{

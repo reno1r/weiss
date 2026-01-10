@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"context"
 	"errors"
 
 	"gorm.io/gorm"
@@ -18,15 +19,15 @@ func NewRoleRepository(db *gorm.DB) RoleRepository {
 	}
 }
 
-func (r *roleRepository) All() []entities.Role {
+func (r *roleRepository) All(ctx context.Context) []entities.Role {
 	var roles []entities.Role
-	r.db.Find(&roles)
+	r.db.WithContext(ctx).Find(&roles)
 	return roles
 }
 
-func (r *roleRepository) FindByID(id uint64) (entities.Role, error) {
+func (r *roleRepository) FindByID(ctx context.Context, id uint64) (entities.Role, error) {
 	var role entities.Role
-	err := r.db.Where("id = ?", id).First(&role).Error
+	err := r.db.WithContext(ctx).Where("id = ?", id).First(&role).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return role, errors.New("role not found")
@@ -36,28 +37,28 @@ func (r *roleRepository) FindByID(id uint64) (entities.Role, error) {
 	return role, nil
 }
 
-func (r *roleRepository) FindByShopID(shopID uint64) []entities.Role {
+func (r *roleRepository) FindByShopID(ctx context.Context, shopID uint64) []entities.Role {
 	var roles []entities.Role
-	r.db.Where("shop_id = ?", shopID).Find(&roles)
+	r.db.WithContext(ctx).Where("shop_id = ?", shopID).Find(&roles)
 	return roles
 }
 
-func (r *roleRepository) Create(role entities.Role) (entities.Role, error) {
-	err := r.db.Create(&role).Error
+func (r *roleRepository) Create(ctx context.Context, role entities.Role) (entities.Role, error) {
+	err := r.db.WithContext(ctx).Create(&role).Error
 	if err != nil {
 		return role, err
 	}
 	return role, nil
 }
 
-func (r *roleRepository) Update(role entities.Role) (entities.Role, error) {
-	err := r.db.Save(&role).Error
+func (r *roleRepository) Update(ctx context.Context, role entities.Role) (entities.Role, error) {
+	err := r.db.WithContext(ctx).Save(&role).Error
 	if err != nil {
 		return role, err
 	}
 	return role, nil
 }
 
-func (r *roleRepository) Delete(role entities.Role) error {
-	return r.db.Delete(&role).Error
+func (r *roleRepository) Delete(ctx context.Context, role entities.Role) error {
+	return r.db.WithContext(ctx).Delete(&role).Error
 }

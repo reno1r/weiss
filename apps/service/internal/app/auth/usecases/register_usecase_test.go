@@ -1,6 +1,7 @@
 package usecases
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -30,6 +31,7 @@ func setupRegisterTest(t *testing.T) (*RegisterUsecase, repositories.UserReposit
 
 func TestRegisterUsecase_Execute(t *testing.T) {
 	t.Run("registers user successfully", func(t *testing.T) {
+		ctx := context.Background()
 		usecase, userRepo := setupRegisterTest(t)
 
 		param := RegisterParam{
@@ -39,7 +41,7 @@ func TestRegisterUsecase_Execute(t *testing.T) {
 			Password: "password123",
 		}
 
-		resp, err := usecase.Execute(param)
+		resp, err := usecase.Execute(ctx, param)
 		require.NoError(t, err)
 		assert.NotZero(t, resp.User.ID)
 		assert.Equal(t, "John Doe", resp.User.FullName)
@@ -48,12 +50,13 @@ func TestRegisterUsecase_Execute(t *testing.T) {
 		assert.NotEqual(t, "password123", resp.User.Password)
 		assert.NotEmpty(t, resp.User.Password)
 
-		verifyUser, err := userRepo.FindByEmail("john@example.com")
+		verifyUser, err := userRepo.FindByEmail(ctx, "john@example.com")
 		require.NoError(t, err)
 		assert.Equal(t, resp.User.ID, verifyUser.ID)
 	})
 
 	t.Run("returns error when email already exists", func(t *testing.T) {
+		ctx := context.Background()
 		usecase, userRepo := setupRegisterTest(t)
 
 		existingUser := entities.User{
@@ -62,7 +65,7 @@ func TestRegisterUsecase_Execute(t *testing.T) {
 			Email:    "existing@example.com",
 			Password: "hashedpassword",
 		}
-		_, err := userRepo.Create(existingUser)
+		_, err := userRepo.Create(ctx, existingUser)
 		require.NoError(t, err)
 
 		param := RegisterParam{
@@ -72,13 +75,14 @@ func TestRegisterUsecase_Execute(t *testing.T) {
 			Password: "password123",
 		}
 
-		resp, err := usecase.Execute(param)
+		resp, err := usecase.Execute(ctx, param)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "user with this email already exists")
 		assert.Nil(t, resp)
 	})
 
 	t.Run("returns error when phone already exists", func(t *testing.T) {
+		ctx := context.Background()
 		usecase, userRepo := setupRegisterTest(t)
 
 		existingUser := entities.User{
@@ -87,7 +91,7 @@ func TestRegisterUsecase_Execute(t *testing.T) {
 			Email:    "existing@example.com",
 			Password: "hashedpassword",
 		}
-		_, err := userRepo.Create(existingUser)
+		_, err := userRepo.Create(ctx, existingUser)
 		require.NoError(t, err)
 
 		param := RegisterParam{
@@ -97,13 +101,14 @@ func TestRegisterUsecase_Execute(t *testing.T) {
 			Password: "password123",
 		}
 
-		resp, err := usecase.Execute(param)
+		resp, err := usecase.Execute(ctx, param)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "user with this phone already exists")
 		assert.Nil(t, resp)
 	})
 
 	t.Run("validates full name is required", func(t *testing.T) {
+		ctx := context.Background()
 		usecase, _ := setupRegisterTest(t)
 
 		param := RegisterParam{
@@ -113,13 +118,14 @@ func TestRegisterUsecase_Execute(t *testing.T) {
 			Password: "password123",
 		}
 
-		resp, err := usecase.Execute(param)
+		resp, err := usecase.Execute(ctx, param)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "validation failed")
 		assert.Nil(t, resp)
 	})
 
 	t.Run("validates full name minimum length", func(t *testing.T) {
+		ctx := context.Background()
 		usecase, _ := setupRegisterTest(t)
 
 		param := RegisterParam{
@@ -129,13 +135,14 @@ func TestRegisterUsecase_Execute(t *testing.T) {
 			Password: "password123",
 		}
 
-		resp, err := usecase.Execute(param)
+		resp, err := usecase.Execute(ctx, param)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "validation failed")
 		assert.Nil(t, resp)
 	})
 
 	t.Run("validates phone is required", func(t *testing.T) {
+		ctx := context.Background()
 		usecase, _ := setupRegisterTest(t)
 
 		param := RegisterParam{
@@ -145,13 +152,14 @@ func TestRegisterUsecase_Execute(t *testing.T) {
 			Password: "password123",
 		}
 
-		resp, err := usecase.Execute(param)
+		resp, err := usecase.Execute(ctx, param)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "validation failed")
 		assert.Nil(t, resp)
 	})
 
 	t.Run("validates phone minimum length", func(t *testing.T) {
+		ctx := context.Background()
 		usecase, _ := setupRegisterTest(t)
 
 		param := RegisterParam{
@@ -161,13 +169,14 @@ func TestRegisterUsecase_Execute(t *testing.T) {
 			Password: "password123",
 		}
 
-		resp, err := usecase.Execute(param)
+		resp, err := usecase.Execute(ctx, param)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "validation failed")
 		assert.Nil(t, resp)
 	})
 
 	t.Run("validates email is required", func(t *testing.T) {
+		ctx := context.Background()
 		usecase, _ := setupRegisterTest(t)
 
 		param := RegisterParam{
@@ -177,13 +186,14 @@ func TestRegisterUsecase_Execute(t *testing.T) {
 			Password: "password123",
 		}
 
-		resp, err := usecase.Execute(param)
+		resp, err := usecase.Execute(ctx, param)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "validation failed")
 		assert.Nil(t, resp)
 	})
 
 	t.Run("validates email format", func(t *testing.T) {
+		ctx := context.Background()
 		usecase, _ := setupRegisterTest(t)
 
 		param := RegisterParam{
@@ -193,13 +203,14 @@ func TestRegisterUsecase_Execute(t *testing.T) {
 			Password: "password123",
 		}
 
-		resp, err := usecase.Execute(param)
+		resp, err := usecase.Execute(ctx, param)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "validation failed")
 		assert.Nil(t, resp)
 	})
 
 	t.Run("validates password is required", func(t *testing.T) {
+		ctx := context.Background()
 		usecase, _ := setupRegisterTest(t)
 
 		param := RegisterParam{
@@ -209,13 +220,14 @@ func TestRegisterUsecase_Execute(t *testing.T) {
 			Password: "",
 		}
 
-		resp, err := usecase.Execute(param)
+		resp, err := usecase.Execute(ctx, param)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "validation failed")
 		assert.Nil(t, resp)
 	})
 
 	t.Run("validates password minimum length", func(t *testing.T) {
+		ctx := context.Background()
 		usecase, _ := setupRegisterTest(t)
 
 		param := RegisterParam{
@@ -225,13 +237,14 @@ func TestRegisterUsecase_Execute(t *testing.T) {
 			Password: "12345",
 		}
 
-		resp, err := usecase.Execute(param)
+		resp, err := usecase.Execute(ctx, param)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "validation failed")
 		assert.Nil(t, resp)
 	})
 
 	t.Run("hashes password before storing", func(t *testing.T) {
+		ctx := context.Background()
 		usecase, userRepo := setupRegisterTest(t)
 
 		param := RegisterParam{
@@ -241,10 +254,10 @@ func TestRegisterUsecase_Execute(t *testing.T) {
 			Password: "password123",
 		}
 
-		_, err := usecase.Execute(param)
+		_, err := usecase.Execute(ctx, param)
 		require.NoError(t, err)
 
-		user, err := userRepo.FindByEmail("john@example.com")
+		user, err := userRepo.FindByEmail(ctx, "john@example.com")
 		require.NoError(t, err)
 		assert.NotEqual(t, "password123", user.Password)
 		assert.True(t, len(user.Password) > 50)

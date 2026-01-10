@@ -1,6 +1,7 @@
 package usecases
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -20,6 +21,7 @@ func setupGetShopTest(t *testing.T) (*GetShopUsecase, repositories.ShopRepositor
 
 func TestGetShopUsecase_Execute(t *testing.T) {
 	t.Run("returns shop when found", func(t *testing.T) {
+		ctx := context.Background()
 		usecase, shopRepo := setupGetShopTest(t)
 
 		shop := entities.Shop{
@@ -32,10 +34,10 @@ func TestGetShopUsecase_Execute(t *testing.T) {
 			Logo:        "test.png",
 		}
 
-		created, err := shopRepo.Create(shop)
+		created, err := shopRepo.Create(ctx, shop)
 		require.NoError(t, err)
 
-		result, err := usecase.Execute(created.ID)
+		result, err := usecase.Execute(ctx, created.ID)
 		require.NoError(t, err)
 		assert.NotNil(t, result.Shop)
 		assert.Equal(t, created.ID, result.Shop.ID)
@@ -49,15 +51,17 @@ func TestGetShopUsecase_Execute(t *testing.T) {
 	})
 
 	t.Run("returns error when shop not found", func(t *testing.T) {
+		ctx := context.Background()
 		usecase, _ := setupGetShopTest(t)
 
-		result, err := usecase.Execute(999)
+		result, err := usecase.Execute(ctx, 999)
 		assert.Error(t, err)
 		assert.Equal(t, "shop not found", err.Error())
 		assert.Nil(t, result)
 	})
 
 	t.Run("does not find soft deleted shops", func(t *testing.T) {
+		ctx := context.Background()
 		usecase, shopRepo := setupGetShopTest(t)
 
 		shop := entities.Shop{
@@ -70,13 +74,13 @@ func TestGetShopUsecase_Execute(t *testing.T) {
 			Logo:        "deleted.png",
 		}
 
-		created, err := shopRepo.Create(shop)
+		created, err := shopRepo.Create(ctx, shop)
 		require.NoError(t, err)
 
-		err = shopRepo.Delete(created)
+		err = shopRepo.Delete(ctx, created)
 		require.NoError(t, err)
 
-		result, err := usecase.Execute(created.ID)
+		result, err := usecase.Execute(ctx, created.ID)
 		assert.Error(t, err)
 		assert.Equal(t, "shop not found", err.Error())
 		assert.Nil(t, result)

@@ -1,6 +1,7 @@
 package usecases
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strings"
@@ -38,7 +39,7 @@ type UpdateShopResult struct {
 	Shop *entities.Shop
 }
 
-func (u *UpdateShopUsecase) Execute(param UpdateShopParam) (*UpdateShopResult, error) {
+func (u *UpdateShopUsecase) Execute(ctx context.Context, param UpdateShopParam) (*UpdateShopResult, error) {
 	if err := u.validator.Struct(param); err != nil {
 		var validationErrors []string
 		for _, err := range err.(validator.ValidationErrors) {
@@ -48,7 +49,7 @@ func (u *UpdateShopUsecase) Execute(param UpdateShopParam) (*UpdateShopResult, e
 	}
 
 	// Check if shop exists
-	_, err := u.shopRepository.FindByID(param.ID)
+	_, err := u.shopRepository.FindByID(ctx, param.ID)
 	if err != nil {
 		return nil, errors.New("shop not found")
 	}
@@ -64,7 +65,7 @@ func (u *UpdateShopUsecase) Execute(param UpdateShopParam) (*UpdateShopResult, e
 		Logo:        param.Logo,
 	}
 
-	updatedShop, err := u.shopRepository.Update(shop)
+	updatedShop, err := u.shopRepository.Update(ctx, shop)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update shop: %w", err)
 	}

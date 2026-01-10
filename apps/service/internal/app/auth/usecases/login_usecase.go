@@ -1,6 +1,7 @@
 package usecases
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strings"
@@ -40,7 +41,7 @@ type LoginResult struct {
 	RefreshToken string
 }
 
-func (u *LoginUsecase) Execute(param LoginParam) (*LoginResult, error) {
+func (u *LoginUsecase) Execute(ctx context.Context, param LoginParam) (*LoginResult, error) {
 	if err := u.validator.Struct(param); err != nil {
 		var validationErrors []string
 		for _, err := range err.(validator.ValidationErrors) {
@@ -57,12 +58,12 @@ func (u *LoginUsecase) Execute(param LoginParam) (*LoginResult, error) {
 	var err error
 
 	if param.Email != "" {
-		user, err = u.userRepository.FindByEmail(param.Email)
+		user, err = u.userRepository.FindByEmail(ctx, param.Email)
 		if err != nil {
 			return nil, errors.New("invalid credentials")
 		}
 	} else if param.Phone != "" {
-		user, err = u.userRepository.FindByPhone(param.Phone)
+		user, err = u.userRepository.FindByPhone(ctx, param.Phone)
 		if err != nil {
 			return nil, errors.New("invalid credentials")
 		}

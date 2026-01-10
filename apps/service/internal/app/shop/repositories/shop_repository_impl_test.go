@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -17,11 +18,13 @@ func TestShopRepository_All(t *testing.T) {
 		db := testutil.SetupTestDB(t, &entities.Shop{})
 		repo := NewShopRepository(db)
 
-		shops := repo.All()
+		ctx := context.Background()
+		shops := repo.All(ctx)
 		assert.Empty(t, shops)
 	})
 
 	t.Run("returns all shops", func(t *testing.T) {
+		ctx := context.Background()
 		db := testutil.SetupTestDB(t, &entities.Shop{})
 		repo := NewShopRepository(db)
 
@@ -44,16 +47,17 @@ func TestShopRepository_All(t *testing.T) {
 			Logo:        "logo2.png",
 		}
 
-		_, err := repo.Create(shop1)
+		_, err := repo.Create(ctx, shop1)
 		require.NoError(t, err)
-		_, err = repo.Create(shop2)
+		_, err = repo.Create(ctx, shop2)
 		require.NoError(t, err)
 
-		shops := repo.All()
+		shops := repo.All(ctx)
 		assert.Len(t, shops, 2)
 	})
 
 	t.Run("excludes soft deleted shops", func(t *testing.T) {
+		ctx := context.Background()
 		db := testutil.SetupTestDB(t, &entities.Shop{})
 		repo := NewShopRepository(db)
 
@@ -67,19 +71,20 @@ func TestShopRepository_All(t *testing.T) {
 			Logo:        "deleted.png",
 		}
 
-		created, err := repo.Create(shop)
+		created, err := repo.Create(ctx, shop)
 		require.NoError(t, err)
 
-		err = repo.Delete(created)
+		err = repo.Delete(ctx, created)
 		require.NoError(t, err)
 
-		shops := repo.All()
+		shops := repo.All(ctx)
 		assert.Empty(t, shops)
 	})
 }
 
 func TestShopRepository_FindByID(t *testing.T) {
 	t.Run("returns shop when found", func(t *testing.T) {
+		ctx := context.Background()
 		db := testutil.SetupTestDB(t, &entities.Shop{})
 		repo := NewShopRepository(db)
 
@@ -93,10 +98,10 @@ func TestShopRepository_FindByID(t *testing.T) {
 			Logo:        "test.png",
 		}
 
-		created, err := repo.Create(shop)
+		created, err := repo.Create(ctx, shop)
 		require.NoError(t, err)
 
-		found, err := repo.FindByID(created.ID)
+		found, err := repo.FindByID(ctx, created.ID)
 		require.NoError(t, err)
 		assert.Equal(t, created.ID, found.ID)
 		assert.Equal(t, "Test Shop", found.Name)
@@ -105,15 +110,17 @@ func TestShopRepository_FindByID(t *testing.T) {
 	})
 
 	t.Run("returns error when shop not found", func(t *testing.T) {
+		ctx := context.Background()
 		db := testutil.SetupTestDB(t, &entities.Shop{})
 		repo := NewShopRepository(db)
 
-		_, err := repo.FindByID(999)
+		_, err := repo.FindByID(ctx, 999)
 		assert.Error(t, err)
 		assert.Equal(t, "shop not found", err.Error())
 	})
 
 	t.Run("does not find soft deleted shops", func(t *testing.T) {
+		ctx := context.Background()
 		db := testutil.SetupTestDB(t, &entities.Shop{})
 		repo := NewShopRepository(db)
 
@@ -127,13 +134,13 @@ func TestShopRepository_FindByID(t *testing.T) {
 			Logo:        "deleted.png",
 		}
 
-		created, err := repo.Create(shop)
+		created, err := repo.Create(ctx, shop)
 		require.NoError(t, err)
 
-		err = repo.Delete(created)
+		err = repo.Delete(ctx, created)
 		require.NoError(t, err)
 
-		_, err = repo.FindByID(created.ID)
+		_, err = repo.FindByID(ctx, created.ID)
 		assert.Error(t, err)
 		assert.Equal(t, "shop not found", err.Error())
 	})
@@ -141,6 +148,7 @@ func TestShopRepository_FindByID(t *testing.T) {
 
 func TestShopRepository_FindByPhone(t *testing.T) {
 	t.Run("returns shop when found", func(t *testing.T) {
+		ctx := context.Background()
 		db := testutil.SetupTestDB(t, &entities.Shop{})
 		repo := NewShopRepository(db)
 
@@ -154,10 +162,10 @@ func TestShopRepository_FindByPhone(t *testing.T) {
 			Logo:        "test.png",
 		}
 
-		created, err := repo.Create(shop)
+		created, err := repo.Create(ctx, shop)
 		require.NoError(t, err)
 
-		found, err := repo.FindByPhone("1234567890")
+		found, err := repo.FindByPhone(ctx, "1234567890")
 		require.NoError(t, err)
 		assert.Equal(t, created.ID, found.ID)
 		assert.Equal(t, "Test Shop", found.Name)
@@ -166,15 +174,17 @@ func TestShopRepository_FindByPhone(t *testing.T) {
 	})
 
 	t.Run("returns error when shop not found", func(t *testing.T) {
+		ctx := context.Background()
 		db := testutil.SetupTestDB(t, &entities.Shop{})
 		repo := NewShopRepository(db)
 
-		_, err := repo.FindByPhone("9999999999")
+		_, err := repo.FindByPhone(ctx, "9999999999")
 		assert.Error(t, err)
 		assert.Equal(t, "shop not found", err.Error())
 	})
 
 	t.Run("does not find soft deleted shops", func(t *testing.T) {
+		ctx := context.Background()
 		db := testutil.SetupTestDB(t, &entities.Shop{})
 		repo := NewShopRepository(db)
 
@@ -188,13 +198,13 @@ func TestShopRepository_FindByPhone(t *testing.T) {
 			Logo:        "deleted.png",
 		}
 
-		created, err := repo.Create(shop)
+		created, err := repo.Create(ctx, shop)
 		require.NoError(t, err)
 
-		err = repo.Delete(created)
+		err = repo.Delete(ctx, created)
 		require.NoError(t, err)
 
-		_, err = repo.FindByPhone("1111111111")
+		_, err = repo.FindByPhone(ctx, "1111111111")
 		assert.Error(t, err)
 		assert.Equal(t, "shop not found", err.Error())
 	})
@@ -202,6 +212,7 @@ func TestShopRepository_FindByPhone(t *testing.T) {
 
 func TestShopRepository_FindByEmail(t *testing.T) {
 	t.Run("returns shop when found", func(t *testing.T) {
+		ctx := context.Background()
 		db := testutil.SetupTestDB(t, &entities.Shop{})
 		repo := NewShopRepository(db)
 
@@ -215,10 +226,10 @@ func TestShopRepository_FindByEmail(t *testing.T) {
 			Logo:        "test.png",
 		}
 
-		created, err := repo.Create(shop)
+		created, err := repo.Create(ctx, shop)
 		require.NoError(t, err)
 
-		found, err := repo.FindByEmail("test@example.com")
+		found, err := repo.FindByEmail(ctx, "test@example.com")
 		require.NoError(t, err)
 		assert.Equal(t, created.ID, found.ID)
 		assert.Equal(t, "Test Shop", found.Name)
@@ -226,15 +237,17 @@ func TestShopRepository_FindByEmail(t *testing.T) {
 	})
 
 	t.Run("returns error when shop not found", func(t *testing.T) {
+		ctx := context.Background()
 		db := testutil.SetupTestDB(t, &entities.Shop{})
 		repo := NewShopRepository(db)
 
-		_, err := repo.FindByEmail("notfound@example.com")
+		_, err := repo.FindByEmail(ctx, "notfound@example.com")
 		assert.Error(t, err)
 		assert.Equal(t, "shop not found", err.Error())
 	})
 
 	t.Run("does not find soft deleted shops", func(t *testing.T) {
+		ctx := context.Background()
 		db := testutil.SetupTestDB(t, &entities.Shop{})
 		repo := NewShopRepository(db)
 
@@ -248,13 +261,13 @@ func TestShopRepository_FindByEmail(t *testing.T) {
 			Logo:        "deleted.png",
 		}
 
-		created, err := repo.Create(shop)
+		created, err := repo.Create(ctx, shop)
 		require.NoError(t, err)
 
-		err = repo.Delete(created)
+		err = repo.Delete(ctx, created)
 		require.NoError(t, err)
 
-		_, err = repo.FindByEmail("deleted@example.com")
+		_, err = repo.FindByEmail(ctx, "deleted@example.com")
 		assert.Error(t, err)
 		assert.Equal(t, "shop not found", err.Error())
 	})
@@ -262,6 +275,7 @@ func TestShopRepository_FindByEmail(t *testing.T) {
 
 func TestShopRepository_Create(t *testing.T) {
 	t.Run("creates shop successfully", func(t *testing.T) {
+		ctx := context.Background()
 		db := testutil.SetupTestDB(t, &entities.Shop{})
 		repo := NewShopRepository(db)
 
@@ -275,7 +289,7 @@ func TestShopRepository_Create(t *testing.T) {
 			Logo:        "newlogo.png",
 		}
 
-		created, err := repo.Create(shop)
+		created, err := repo.Create(ctx, shop)
 		require.NoError(t, err)
 		assert.NotZero(t, created.ID)
 		assert.Equal(t, "New Shop", created.Name)
@@ -289,6 +303,7 @@ func TestShopRepository_Create(t *testing.T) {
 	})
 
 	t.Run("allows duplicate phone (no unique constraint)", func(t *testing.T) {
+		ctx := context.Background()
 		db := testutil.SetupTestDB(t, &entities.Shop{})
 		repo := NewShopRepository(db)
 
@@ -302,7 +317,7 @@ func TestShopRepository_Create(t *testing.T) {
 			Logo:        "logo1.png",
 		}
 
-		_, err := repo.Create(shop1)
+		_, err := repo.Create(ctx, shop1)
 		require.NoError(t, err)
 
 		shop2 := entities.Shop{
@@ -315,11 +330,12 @@ func TestShopRepository_Create(t *testing.T) {
 			Logo:        "logo2.png",
 		}
 
-		_, err = repo.Create(shop2)
+		_, err = repo.Create(ctx, shop2)
 		require.NoError(t, err) // No unique constraint on phone
 	})
 
 	t.Run("allows duplicate email (no unique constraint)", func(t *testing.T) {
+		ctx := context.Background()
 		db := testutil.SetupTestDB(t, &entities.Shop{})
 		repo := NewShopRepository(db)
 
@@ -333,7 +349,7 @@ func TestShopRepository_Create(t *testing.T) {
 			Logo:        "logo1.png",
 		}
 
-		_, err := repo.Create(shop1)
+		_, err := repo.Create(ctx, shop1)
 		require.NoError(t, err)
 
 		shop2 := entities.Shop{
@@ -346,13 +362,14 @@ func TestShopRepository_Create(t *testing.T) {
 			Logo:        "logo2.png",
 		}
 
-		_, err = repo.Create(shop2)
+		_, err = repo.Create(ctx, shop2)
 		require.NoError(t, err) // No unique constraint on email
 	})
 }
 
 func TestShopRepository_Update(t *testing.T) {
 	t.Run("updates shop successfully", func(t *testing.T) {
+		ctx := context.Background()
 		db := testutil.SetupTestDB(t, &entities.Shop{})
 		repo := NewShopRepository(db)
 
@@ -366,7 +383,7 @@ func TestShopRepository_Update(t *testing.T) {
 			Logo:        "original.png",
 		}
 
-		created, err := repo.Create(shop)
+		created, err := repo.Create(ctx, shop)
 		require.NoError(t, err)
 
 		originalUpdatedAt := created.UpdatedAt
@@ -376,7 +393,7 @@ func TestShopRepository_Update(t *testing.T) {
 		created.Email = "updated@example.com"
 		created.Description = "Updated description"
 
-		updated, err := repo.Update(created)
+		updated, err := repo.Update(ctx, created)
 		require.NoError(t, err)
 		assert.Equal(t, "Updated Shop", updated.Name)
 		assert.Equal(t, "updated@example.com", updated.Email)
@@ -385,6 +402,7 @@ func TestShopRepository_Update(t *testing.T) {
 	})
 
 	t.Run("updates non-zero fields", func(t *testing.T) {
+		ctx := context.Background()
 		db := testutil.SetupTestDB(t, &entities.Shop{})
 		repo := NewShopRepository(db)
 
@@ -398,12 +416,12 @@ func TestShopRepository_Update(t *testing.T) {
 			Logo:        "test.png",
 		}
 
-		created, err := repo.Create(shop)
+		created, err := repo.Create(ctx, shop)
 		require.NoError(t, err)
 
 		created.Address = "456 Updated Ave"
 		created.Website = "https://updated.com"
-		updated, err := repo.Update(created)
+		updated, err := repo.Update(ctx, created)
 		require.NoError(t, err)
 		assert.Equal(t, "456 Updated Ave", updated.Address)
 		assert.Equal(t, "https://updated.com", updated.Website)
@@ -412,6 +430,7 @@ func TestShopRepository_Update(t *testing.T) {
 
 func TestShopRepository_Delete(t *testing.T) {
 	t.Run("soft deletes shop successfully", func(t *testing.T) {
+		ctx := context.Background()
 		db := testutil.SetupTestDB(t, &entities.Shop{})
 		repo := NewShopRepository(db)
 
@@ -425,14 +444,14 @@ func TestShopRepository_Delete(t *testing.T) {
 			Logo:        "delete.png",
 		}
 
-		created, err := repo.Create(shop)
+		created, err := repo.Create(ctx, shop)
 		require.NoError(t, err)
 
-		err = repo.Delete(created)
+		err = repo.Delete(ctx, created)
 		require.NoError(t, err)
 
 		// Verify shop is soft deleted
-		_, err = repo.FindByPhone("1234567890")
+		_, err = repo.FindByPhone(ctx, "1234567890")
 		assert.Error(t, err)
 		assert.Equal(t, "shop not found", err.Error())
 
@@ -444,6 +463,7 @@ func TestShopRepository_Delete(t *testing.T) {
 	})
 
 	t.Run("can delete multiple shops", func(t *testing.T) {
+		ctx := context.Background()
 		db := testutil.SetupTestDB(t, &entities.Shop{})
 		repo := NewShopRepository(db)
 
@@ -466,17 +486,17 @@ func TestShopRepository_Delete(t *testing.T) {
 			Logo:        "logo2.png",
 		}
 
-		created1, err := repo.Create(shop1)
+		created1, err := repo.Create(ctx, shop1)
 		require.NoError(t, err)
-		created2, err := repo.Create(shop2)
-		require.NoError(t, err)
-
-		err = repo.Delete(created1)
-		require.NoError(t, err)
-		err = repo.Delete(created2)
+		created2, err := repo.Create(ctx, shop2)
 		require.NoError(t, err)
 
-		shops := repo.All()
+		err = repo.Delete(ctx, created1)
+		require.NoError(t, err)
+		err = repo.Delete(ctx, created2)
+		require.NoError(t, err)
+
+		shops := repo.All(ctx)
 		assert.Empty(t, shops)
 	})
 }

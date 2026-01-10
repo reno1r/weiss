@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -57,7 +58,8 @@ func NewShopHandler(
 // @Failure      500  {object}  map[string]string  "Internal server error"
 // @Router       /shops [get]
 func (h *ShopHandler) ListShops(c fiber.Ctx) error {
-	result := h.listShopsUsecase.Execute()
+	ctx := c.Context()
+	result := h.listShopsUsecase.Execute(ctx)
 
 	shops := make([]ShopResponseDTO, len(result.Shops))
 	for i, shop := range result.Shops {
@@ -101,7 +103,8 @@ func (h *ShopHandler) GetShop(c fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "invalid shop id")
 	}
 
-	result, err := h.getShopUsecase.Execute(id)
+	ctx := c.Context()
+	result, err := h.getShopUsecase.Execute(ctx, id)
 	if err != nil {
 		if err.Error() == "shop not found" {
 			return fiber.NewError(fiber.StatusNotFound, "shop not found")
@@ -149,7 +152,16 @@ func (h *ShopHandler) CreateShop(c fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "invalid request body")
 	}
 
-	result, err := h.createShopUsecase.Execute(usecases.CreateShopParam{
+	// Get authenticated user ID from context
+	// This should be set by authentication middleware
+	userID, err := getUserIDFromContext(c)
+	if err != nil {
+		return fiber.NewError(fiber.StatusUnauthorized, "authentication required")
+	}
+
+	ctx := c.Context()
+	result, err := h.createShopUsecase.Execute(ctx, usecases.CreateShopParam{
+		UserID:      userID,
 		Name:        request.Name,
 		Description: request.Description,
 		Address:     request.Address,
@@ -213,7 +225,8 @@ func (h *ShopHandler) UpdateShop(c fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "invalid request body")
 	}
 
-	result, err := h.updateShopUsecase.Execute(usecases.UpdateShopParam{
+	ctx := c.Context()
+	result, err := h.updateShopUsecase.Execute(ctx, usecases.UpdateShopParam{
 		ID:          id,
 		Name:        request.Name,
 		Description: request.Description,
@@ -273,7 +286,8 @@ func (h *ShopHandler) DeleteShop(c fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "invalid shop id")
 	}
 
-	err = h.deleteShopUsecase.Execute(id)
+	ctx := c.Context()
+	err = h.deleteShopUsecase.Execute(ctx, id)
 	if err != nil {
 		if err.Error() == "shop not found" {
 			return fiber.NewError(fiber.StatusNotFound, "shop not found")
@@ -302,8 +316,9 @@ func (h *ShopHandler) GetStaff(c fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "invalid shop id")
 	}
 
+	ctx := c.Context()
 	// Get shop first to validate it exists
-	shopResult, err := h.getShopUsecase.Execute(id)
+	shopResult, err := h.getShopUsecase.Execute(ctx, id)
 	if err != nil {
 		if err.Error() == "shop not found" {
 			return fiber.NewError(fiber.StatusNotFound, "shop not found")
@@ -312,7 +327,7 @@ func (h *ShopHandler) GetStaff(c fiber.Ctx) error {
 	}
 
 	// Get staffs for the shop
-	result, err := h.getStaffsUsecase.Execute(accessusecases.GetStaffsParam{
+	result, err := h.getStaffsUsecase.Execute(ctx, accessusecases.GetStaffsParam{
 		Shop: shopResult.Shop,
 	})
 	if err != nil {
@@ -373,8 +388,9 @@ func (h *ShopHandler) AssignStaff(c fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "invalid request body")
 	}
 
+	ctx := c.Context()
 	// Get shop first to validate it exists
-	shopResult, err := h.getShopUsecase.Execute(id)
+	shopResult, err := h.getShopUsecase.Execute(ctx, id)
 	if err != nil {
 		if err.Error() == "shop not found" {
 			return fiber.NewError(fiber.StatusNotFound, "shop not found")
@@ -383,7 +399,7 @@ func (h *ShopHandler) AssignStaff(c fiber.Ctx) error {
 	}
 
 	// Get user
-	userResult, err := h.getUserUsecase.Execute(request.UserID)
+	userResult, err := h.getUserUsecase.Execute(ctx, request.UserID)
 	if err != nil {
 		if err.Error() == "user not found" {
 			return fiber.NewError(fiber.StatusNotFound, "user not found")
@@ -392,7 +408,7 @@ func (h *ShopHandler) AssignStaff(c fiber.Ctx) error {
 	}
 
 	// Get role
-	roleResult, err := h.getRoleUsecase.Execute(request.RoleID)
+	roleResult, err := h.getRoleUsecase.Execute(ctx, request.RoleID)
 	if err != nil {
 		if err.Error() == "role not found" {
 			return fiber.NewError(fiber.StatusNotFound, "role not found")
@@ -406,7 +422,7 @@ func (h *ShopHandler) AssignStaff(c fiber.Ctx) error {
 	}
 
 	// Assign staff
-	result, err := h.assignStaffUsecase.Execute(accessusecases.AssignStaffParam{
+	result, err := h.assignStaffUsecase.Execute(ctx, accessusecases.AssignStaffParam{
 		User: userResult.User,
 		Shop: shopResult.Shop,
 		Role: roleResult.Role,
@@ -533,4 +549,37 @@ type StaffResponse struct {
 
 type StaffResponseData struct {
 	Staff StaffResponseDTO `json:"staff"`
+}
+
+// getUserIDFromContext extracts the authenticated user ID from the fiber context
+// This expects the user ID to be set in context by authentication middleware
+// The key "user_id" is a common convention, but can be adjusted based on your auth implementation
+func getUserIDFromContext(c fiber.Ctx) (uint64, error) {
+	// Try to get user ID from locals (set by auth middleware)
+	userIDValue := c.Locals("user_id")
+	if userIDValue == nil {
+		return 0, fiber.NewError(fiber.StatusUnauthorized, "user ID not found in context")
+	}
+
+	// Handle different possible types
+	switch v := userIDValue.(type) {
+	case uint64:
+		return v, nil
+	case int:
+		return uint64(v), nil
+	case int64:
+		return uint64(v), nil
+	case float64:
+		return uint64(v), nil
+	case string:
+		// Try to parse as uint64
+		var id uint64
+		_, err := fmt.Sscanf(v, "%d", &id)
+		if err != nil {
+			return 0, fiber.NewError(fiber.StatusUnauthorized, "invalid user ID format")
+		}
+		return id, nil
+	default:
+		return 0, fiber.NewError(fiber.StatusUnauthorized, "invalid user ID type")
+	}
 }

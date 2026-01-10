@@ -1,6 +1,7 @@
 package usecases
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -20,6 +21,7 @@ func setupUpdateShopTest(t *testing.T) (*UpdateShopUsecase, repositories.ShopRep
 
 func TestUpdateShopUsecase_Execute(t *testing.T) {
 	t.Run("updates shop successfully", func(t *testing.T) {
+		ctx := context.Background()
 		usecase, shopRepo := setupUpdateShopTest(t)
 
 		// Create initial shop
@@ -33,7 +35,7 @@ func TestUpdateShopUsecase_Execute(t *testing.T) {
 			Logo:        "original.png",
 		}
 
-		created, err := shopRepo.Create(shop)
+		created, err := shopRepo.Create(ctx, shop)
 		require.NoError(t, err)
 
 		param := UpdateShopParam{
@@ -47,7 +49,7 @@ func TestUpdateShopUsecase_Execute(t *testing.T) {
 			Logo:        "updated.png",
 		}
 
-		result, err := usecase.Execute(param)
+		result, err := usecase.Execute(ctx, param)
 		require.NoError(t, err)
 		assert.NotNil(t, result.Shop)
 		assert.Equal(t, created.ID, result.Shop.ID)
@@ -60,13 +62,14 @@ func TestUpdateShopUsecase_Execute(t *testing.T) {
 		assert.Equal(t, "updated.png", result.Shop.Logo)
 
 		// Verify shop was updated in database
-		found, err := shopRepo.FindByID(created.ID)
+		found, err := shopRepo.FindByID(ctx, created.ID)
 		require.NoError(t, err)
 		assert.Equal(t, "Updated Shop", found.Name)
 		assert.Equal(t, "updated@example.com", found.Email)
 	})
 
 	t.Run("returns error when shop not found", func(t *testing.T) {
+		ctx := context.Background()
 		usecase, _ := setupUpdateShopTest(t)
 
 		param := UpdateShopParam{
@@ -80,13 +83,14 @@ func TestUpdateShopUsecase_Execute(t *testing.T) {
 			Logo:        "updated.png",
 		}
 
-		result, err := usecase.Execute(param)
+		result, err := usecase.Execute(ctx, param)
 		assert.Error(t, err)
 		assert.Equal(t, "shop not found", err.Error())
 		assert.Nil(t, result)
 	})
 
 	t.Run("validates ID is required", func(t *testing.T) {
+		ctx := context.Background()
 		usecase, _ := setupUpdateShopTest(t)
 
 		param := UpdateShopParam{
@@ -100,13 +104,14 @@ func TestUpdateShopUsecase_Execute(t *testing.T) {
 			Logo:        "updated.png",
 		}
 
-		result, err := usecase.Execute(param)
+		result, err := usecase.Execute(ctx, param)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "validation failed")
 		assert.Nil(t, result)
 	})
 
 	t.Run("validates name is required", func(t *testing.T) {
+		ctx := context.Background()
 		usecase, shopRepo := setupUpdateShopTest(t)
 
 		shop := entities.Shop{
@@ -119,7 +124,7 @@ func TestUpdateShopUsecase_Execute(t *testing.T) {
 			Logo:        "original.png",
 		}
 
-		created, err := shopRepo.Create(shop)
+		created, err := shopRepo.Create(ctx, shop)
 		require.NoError(t, err)
 
 		param := UpdateShopParam{
@@ -133,13 +138,14 @@ func TestUpdateShopUsecase_Execute(t *testing.T) {
 			Logo:        "updated.png",
 		}
 
-		result, err := usecase.Execute(param)
+		result, err := usecase.Execute(ctx, param)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "validation failed")
 		assert.Nil(t, result)
 	})
 
 	t.Run("validates name minimum length", func(t *testing.T) {
+		ctx := context.Background()
 		usecase, shopRepo := setupUpdateShopTest(t)
 
 		shop := entities.Shop{
@@ -152,7 +158,7 @@ func TestUpdateShopUsecase_Execute(t *testing.T) {
 			Logo:        "original.png",
 		}
 
-		created, err := shopRepo.Create(shop)
+		created, err := shopRepo.Create(ctx, shop)
 		require.NoError(t, err)
 
 		param := UpdateShopParam{
@@ -166,13 +172,14 @@ func TestUpdateShopUsecase_Execute(t *testing.T) {
 			Logo:        "updated.png",
 		}
 
-		result, err := usecase.Execute(param)
+		result, err := usecase.Execute(ctx, param)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "validation failed")
 		assert.Nil(t, result)
 	})
 
 	t.Run("validates description is required", func(t *testing.T) {
+		ctx := context.Background()
 		usecase, shopRepo := setupUpdateShopTest(t)
 
 		shop := entities.Shop{
@@ -185,7 +192,7 @@ func TestUpdateShopUsecase_Execute(t *testing.T) {
 			Logo:        "original.png",
 		}
 
-		created, err := shopRepo.Create(shop)
+		created, err := shopRepo.Create(ctx, shop)
 		require.NoError(t, err)
 
 		param := UpdateShopParam{
@@ -199,13 +206,14 @@ func TestUpdateShopUsecase_Execute(t *testing.T) {
 			Logo:        "updated.png",
 		}
 
-		result, err := usecase.Execute(param)
+		result, err := usecase.Execute(ctx, param)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "validation failed")
 		assert.Nil(t, result)
 	})
 
 	t.Run("validates email format", func(t *testing.T) {
+		ctx := context.Background()
 		usecase, shopRepo := setupUpdateShopTest(t)
 
 		shop := entities.Shop{
@@ -218,7 +226,7 @@ func TestUpdateShopUsecase_Execute(t *testing.T) {
 			Logo:        "original.png",
 		}
 
-		created, err := shopRepo.Create(shop)
+		created, err := shopRepo.Create(ctx, shop)
 		require.NoError(t, err)
 
 		param := UpdateShopParam{
@@ -232,13 +240,14 @@ func TestUpdateShopUsecase_Execute(t *testing.T) {
 			Logo:        "updated.png",
 		}
 
-		result, err := usecase.Execute(param)
+		result, err := usecase.Execute(ctx, param)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "validation failed")
 		assert.Nil(t, result)
 	})
 
 	t.Run("validates website URL format", func(t *testing.T) {
+		ctx := context.Background()
 		usecase, shopRepo := setupUpdateShopTest(t)
 
 		shop := entities.Shop{
@@ -251,7 +260,7 @@ func TestUpdateShopUsecase_Execute(t *testing.T) {
 			Logo:        "original.png",
 		}
 
-		created, err := shopRepo.Create(shop)
+		created, err := shopRepo.Create(ctx, shop)
 		require.NoError(t, err)
 
 		param := UpdateShopParam{
@@ -265,10 +274,9 @@ func TestUpdateShopUsecase_Execute(t *testing.T) {
 			Logo:        "updated.png",
 		}
 
-		result, err := usecase.Execute(param)
+		result, err := usecase.Execute(ctx, param)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "validation failed")
 		assert.Nil(t, result)
 	})
 }
-
