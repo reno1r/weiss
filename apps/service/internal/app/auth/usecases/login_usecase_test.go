@@ -52,12 +52,12 @@ func TestLoginUsecase_Execute(t *testing.T) {
 		createdUser, err := userRepo.Create(user)
 		require.NoError(t, err)
 
-		credentials := LoginData{
+		param := LoginParam{
 			Email:    "john@example.com",
 			Password: password,
 		}
 
-		resp, err := usecase.Execute(credentials)
+		resp, err := usecase.Execute(param)
 		require.NoError(t, err)
 		assert.Equal(t, createdUser.ID, resp.User.ID)
 		assert.Equal(t, "John Doe", resp.User.FullName)
@@ -82,12 +82,12 @@ func TestLoginUsecase_Execute(t *testing.T) {
 		createdUser, err := userRepo.Create(user)
 		require.NoError(t, err)
 
-		credentials := LoginData{
+		param := LoginParam{
 			Phone:    "1234567890",
 			Password: password,
 		}
 
-		resp, err := usecase.Execute(credentials)
+		resp, err := usecase.Execute(param)
 		require.NoError(t, err)
 		assert.Equal(t, createdUser.ID, resp.User.ID)
 		assert.NotEmpty(t, resp.AccessToken)
@@ -97,12 +97,12 @@ func TestLoginUsecase_Execute(t *testing.T) {
 	t.Run("returns error when email not found", func(t *testing.T) {
 		usecase, _ := setupLoginTest(t)
 
-		credentials := LoginData{
+		param := LoginParam{
 			Email:    "notfound@example.com",
 			Password: "password123",
 		}
 
-		resp, err := usecase.Execute(credentials)
+		resp, err := usecase.Execute(param)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "invalid credentials")
 		assert.Nil(t, resp)
@@ -111,12 +111,12 @@ func TestLoginUsecase_Execute(t *testing.T) {
 	t.Run("returns error when phone not found", func(t *testing.T) {
 		usecase, _ := setupLoginTest(t)
 
-		credentials := LoginData{
+		param := LoginParam{
 			Phone:    "9999999999",
 			Password: "password123",
 		}
 
-		resp, err := usecase.Execute(credentials)
+		resp, err := usecase.Execute(param)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "invalid credentials")
 		assert.Nil(t, resp)
@@ -138,12 +138,12 @@ func TestLoginUsecase_Execute(t *testing.T) {
 		_, err = userRepo.Create(user)
 		require.NoError(t, err)
 
-		credentials := LoginData{
+		param := LoginParam{
 			Email:    "john@example.com",
 			Password: "wrongpassword",
 		}
 
-		resp, err := usecase.Execute(credentials)
+		resp, err := usecase.Execute(param)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "invalid credentials")
 		assert.Nil(t, resp)
@@ -152,12 +152,12 @@ func TestLoginUsecase_Execute(t *testing.T) {
 	t.Run("validates password is required", func(t *testing.T) {
 		usecase, _ := setupLoginTest(t)
 
-		credentials := LoginData{
+		param := LoginParam{
 			Email:    "john@example.com",
 			Password: "",
 		}
 
-		resp, err := usecase.Execute(credentials)
+		resp, err := usecase.Execute(param)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "validation failed")
 		assert.Nil(t, resp)
@@ -166,12 +166,12 @@ func TestLoginUsecase_Execute(t *testing.T) {
 	t.Run("validates email format when provided", func(t *testing.T) {
 		usecase, _ := setupLoginTest(t)
 
-		credentials := LoginData{
+		param := LoginParam{
 			Email:    "invalid-email",
 			Password: "password123",
 		}
 
-		resp, err := usecase.Execute(credentials)
+		resp, err := usecase.Execute(param)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "validation failed")
 		assert.Nil(t, resp)
@@ -180,12 +180,12 @@ func TestLoginUsecase_Execute(t *testing.T) {
 	t.Run("validates phone length when provided", func(t *testing.T) {
 		usecase, _ := setupLoginTest(t)
 
-		credentials := LoginData{
+		param := LoginParam{
 			Phone:    "123",
 			Password: "password123",
 		}
 
-		resp, err := usecase.Execute(credentials)
+		resp, err := usecase.Execute(param)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "validation failed")
 		assert.Nil(t, resp)
@@ -194,13 +194,13 @@ func TestLoginUsecase_Execute(t *testing.T) {
 	t.Run("returns error when both email and phone are empty", func(t *testing.T) {
 		usecase, _ := setupLoginTest(t)
 
-		credentials := LoginData{
+		param := LoginParam{
 			Email:    "",
 			Phone:    "",
 			Password: "password123",
 		}
 
-		resp, err := usecase.Execute(credentials)
+		resp, err := usecase.Execute(param)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "email or phone is required")
 		assert.Nil(t, resp)
@@ -222,12 +222,12 @@ func TestLoginUsecase_Execute(t *testing.T) {
 		createdUser, err := userRepo.Create(user)
 		require.NoError(t, err)
 
-		credentials := LoginData{
+		param := LoginParam{
 			Email:    "john@example.com",
 			Password: password,
 		}
 
-		resp, err := usecase.Execute(credentials)
+		resp, err := usecase.Execute(param)
 		require.NoError(t, err)
 
 		config := &config.Config{

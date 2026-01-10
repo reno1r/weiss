@@ -21,7 +21,7 @@ func NewRefreshTokenUsecase(userRepository repositories.UserRepository, tokenSer
 	}
 }
 
-type RefreshTokenData struct {
+type RefreshTokenParam struct {
 	RefreshToken string
 }
 
@@ -31,12 +31,12 @@ type RefreshTokenResult struct {
 	RefreshToken string
 }
 
-func (u *RefreshTokenUsecase) Execute(req RefreshTokenData) (*RefreshTokenResult, error) {
-	if req.RefreshToken == "" {
+func (u *RefreshTokenUsecase) Execute(param RefreshTokenParam) (*RefreshTokenResult, error) {
+	if param.RefreshToken == "" {
 		return nil, errors.New("refresh token is required")
 	}
 
-	claims, err := u.tokenService.VerifyRefreshToken(req.RefreshToken)
+	claims, err := u.tokenService.VerifyRefreshToken(param.RefreshToken)
 	if err != nil {
 		return nil, fmt.Errorf("failed to verify refresh token: %w", err)
 	}

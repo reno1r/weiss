@@ -23,7 +23,7 @@ func NewUpdateShopUsecase(shopRepository repositories.ShopRepository) *UpdateSho
 	}
 }
 
-type UpdateShopData struct {
+type UpdateShopParam struct {
 	ID          uint64 `validate:"required"`
 	Name        string `validate:"required,min=2,max=255"`
 	Description string `validate:"required,min=10,max=1000"`
@@ -38,8 +38,8 @@ type UpdateShopResult struct {
 	Shop *entities.Shop
 }
 
-func (u *UpdateShopUsecase) Execute(req UpdateShopData) (*UpdateShopResult, error) {
-	if err := u.validator.Struct(req); err != nil {
+func (u *UpdateShopUsecase) Execute(param UpdateShopParam) (*UpdateShopResult, error) {
+	if err := u.validator.Struct(param); err != nil {
 		var validationErrors []string
 		for _, err := range err.(validator.ValidationErrors) {
 			validationErrors = append(validationErrors, validationutil.GetValidationErrorMessage(err))
@@ -48,20 +48,20 @@ func (u *UpdateShopUsecase) Execute(req UpdateShopData) (*UpdateShopResult, erro
 	}
 
 	// Check if shop exists
-	_, err := u.shopRepository.FindByID(req.ID)
+	_, err := u.shopRepository.FindByID(param.ID)
 	if err != nil {
 		return nil, errors.New("shop not found")
 	}
 
 	shop := entities.Shop{
-		ID:          req.ID,
-		Name:        req.Name,
-		Description: req.Description,
-		Address:     req.Address,
-		Phone:       req.Phone,
-		Email:       req.Email,
-		Website:     req.Website,
-		Logo:        req.Logo,
+		ID:          param.ID,
+		Name:        param.Name,
+		Description: param.Description,
+		Address:     param.Address,
+		Phone:       param.Phone,
+		Email:       param.Email,
+		Website:     param.Website,
+		Logo:        param.Logo,
 	}
 
 	updatedShop, err := u.shopRepository.Update(shop)

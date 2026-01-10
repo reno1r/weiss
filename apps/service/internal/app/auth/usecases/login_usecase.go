@@ -28,7 +28,7 @@ func NewLoginUsecase(userRepository repositories.UserRepository, tokenService *s
 	}
 }
 
-type LoginData struct {
+type LoginParam struct {
 	Email    string `validate:"omitempty,email"`
 	Phone    string `validate:"omitempty,min=10,max=20"`
 	Password string `validate:"required,min=1"`
@@ -40,8 +40,8 @@ type LoginResult struct {
 	RefreshToken string
 }
 
-func (u *LoginUsecase) Execute(credentials LoginData) (*LoginResult, error) {
-	if err := u.validator.Struct(credentials); err != nil {
+func (u *LoginUsecase) Execute(param LoginParam) (*LoginResult, error) {
+	if err := u.validator.Struct(param); err != nil {
 		var validationErrors []string
 		for _, err := range err.(validator.ValidationErrors) {
 			validationErrors = append(validationErrors, validationutil.GetValidationErrorMessage(err))
@@ -49,20 +49,20 @@ func (u *LoginUsecase) Execute(credentials LoginData) (*LoginResult, error) {
 		return nil, fmt.Errorf("validation failed: %s", strings.Join(validationErrors, ", "))
 	}
 
-	if credentials.Email == "" && credentials.Phone == "" {
+	if param.Email == "" && param.Phone == "" {
 		return nil, errors.New("email or phone is required")
 	}
 
 	var user entities.User
 	var err error
 
-	if credentials.Email != "" {
-		user, err = u.userRepository.FindByEmail(credentials.Email)
+	if param.Email != "" {
+		user, err = u.userRepository.FindByEmail(param.Email)
 		if err != nil {
 			return nil, errors.New("invalid credentials")
 		}
-	} else if credentials.Phone != "" {
-		user, err = u.userRepository.FindByPhone(credentials.Phone)
+	} else if param.Phone != "" {
+		user, err = u.userRepository.FindByPhone(param.Phone)
 		if err != nil {
 			return nil, errors.New("invalid credentials")
 		}
@@ -70,7 +70,7 @@ func (u *LoginUsecase) Execute(credentials LoginData) (*LoginResult, error) {
 		return nil, errors.New("email or phone is required")
 	}
 
-	if !u.passwordService.VerifyPassword(user.Password, credentials.Password) {
+	if !u.passwordService.VerifyPassword(user.Password, param.Password) {
 		return nil, errors.New("invalid credentials")
 	}
 

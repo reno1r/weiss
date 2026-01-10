@@ -134,7 +134,7 @@ func (h *ShopHandler) CreateShop(c fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "invalid request body")
 	}
 
-	result, err := h.createShopUsecase.Execute(usecases.CreateShopData{
+	result, err := h.createShopUsecase.Execute(usecases.CreateShopParam{
 		Name:        request.Name,
 		Description: request.Description,
 		Address:     request.Address,
@@ -198,7 +198,7 @@ func (h *ShopHandler) UpdateShop(c fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "invalid request body")
 	}
 
-	result, err := h.updateShopUsecase.Execute(usecases.UpdateShopData{
+	result, err := h.updateShopUsecase.Execute(usecases.UpdateShopParam{
 		ID:          id,
 		Name:        request.Name,
 		Description: request.Description,

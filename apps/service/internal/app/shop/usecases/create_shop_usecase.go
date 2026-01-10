@@ -22,7 +22,7 @@ func NewCreateShopUsecase(shopRepository repositories.ShopRepository) *CreateSho
 	}
 }
 
-type CreateShopData struct {
+type CreateShopParam struct {
 	Name        string `validate:"required,min=2,max=255"`
 	Description string `validate:"required,min=10,max=1000"`
 	Address     string `validate:"required,min=5,max=255"`
@@ -36,8 +36,8 @@ type CreateShopResult struct {
 	Shop *entities.Shop
 }
 
-func (u *CreateShopUsecase) Execute(req CreateShopData) (*CreateShopResult, error) {
-	if err := u.validator.Struct(req); err != nil {
+func (u *CreateShopUsecase) Execute(param CreateShopParam) (*CreateShopResult, error) {
+	if err := u.validator.Struct(param); err != nil {
 		var validationErrors []string
 		for _, err := range err.(validator.ValidationErrors) {
 			validationErrors = append(validationErrors, validationutil.GetValidationErrorMessage(err))
@@ -46,13 +46,13 @@ func (u *CreateShopUsecase) Execute(req CreateShopData) (*CreateShopResult, erro
 	}
 
 	shop := entities.Shop{
-		Name:        req.Name,
-		Description: req.Description,
-		Address:     req.Address,
-		Phone:       req.Phone,
-		Email:       req.Email,
-		Website:     req.Website,
-		Logo:        req.Logo,
+		Name:        param.Name,
+		Description: param.Description,
+		Address:     param.Address,
+		Phone:       param.Phone,
+		Email:       param.Email,
+		Website:     param.Website,
+		Logo:        param.Logo,
 	}
 
 	createdShop, err := u.shopRepository.Create(shop)

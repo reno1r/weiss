@@ -18,8 +18,8 @@ func NewLoginHandler(loginUsecase *usecases.LoginUsecase) *LoginHandler {
 }
 
 type LoginPayload struct {
-	Email    string `json:"email" example:"john@example.com"` // User's email address (optional if phone is provided)
-	Phone    string `json:"phone" example:"1234567890"` // User's phone number (optional if email is provided)
+	Email    string `json:"email" example:"john@example.com"`                  // User's email address (optional if phone is provided)
+	Phone    string `json:"phone" example:"1234567890"`                        // User's phone number (optional if email is provided)
 	Password string `json:"password" example:"password123" binding:"required"` // User's password
 }
 
@@ -53,7 +53,7 @@ func (h *LoginHandler) Handle(c fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "invalid request body")
 	}
 
-	response, err := h.loginUsecase.Execute(usecases.LoginData{
+	response, err := h.loginUsecase.Execute(usecases.LoginParam{
 		Email:    credentials.Email,
 		Phone:    credentials.Phone,
 		Password: credentials.Password,
