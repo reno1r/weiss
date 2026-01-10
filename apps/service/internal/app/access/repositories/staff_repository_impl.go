@@ -21,12 +21,15 @@ func NewStaffRepository(db *gorm.DB) StaffRepository {
 func (r *staffRepository) All() []entities.Staff {
 	var staffs []entities.Staff
 	r.db.Find(&staffs)
+	for i := range staffs {
+		r.db.Preload("User").Preload("Role").Preload("Shop").Find(&staffs[i])
+	}
 	return staffs
 }
 
 func (r *staffRepository) FindByID(id uint64) (entities.Staff, error) {
 	var staff entities.Staff
-	err := r.db.Where("id = ?", id).First(&staff).Error
+	err := r.db.Where("id = ?", id).Preload("User").Preload("Role").Preload("Shop").First(&staff).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return staff, errors.New("staff not found")
@@ -39,6 +42,9 @@ func (r *staffRepository) FindByID(id uint64) (entities.Staff, error) {
 func (r *staffRepository) FindByShopID(shopID uint64) []entities.Staff {
 	var staffs []entities.Staff
 	r.db.Where("shop_id = ?", shopID).Find(&staffs)
+	for i := range staffs {
+		r.db.Preload("User").Preload("Role").Preload("Shop").Find(&staffs[i])
+	}
 	return staffs
 }
 

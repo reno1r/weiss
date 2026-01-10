@@ -24,6 +24,18 @@ func (r *userRepository) All() []entities.User {
 	return users
 }
 
+func (r *userRepository) FindByID(id uint64) (entities.User, error) {
+	var user entities.User
+	err := r.db.Where("id = ?", id).First(&user).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return user, errors.New("user not found")
+		}
+		return user, err
+	}
+	return user, nil
+}
+
 func (r *userRepository) FindByPhone(phone string) (entities.User, error) {
 	var user entities.User
 	err := r.db.Where("phone = ?", phone).First(&user).Error

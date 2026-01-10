@@ -19,11 +19,14 @@ import (
 
 	_ "github.com/reno1r/weiss/apps/service/docs/swagger"
 
+	accessrepositories "github.com/reno1r/weiss/apps/service/internal/app/access/repositories"
+	accessusecases "github.com/reno1r/weiss/apps/service/internal/app/access/usecases"
 	"github.com/reno1r/weiss/apps/service/internal/app/auth/services"
 	"github.com/reno1r/weiss/apps/service/internal/app/auth/usecases"
 	shoprepositories "github.com/reno1r/weiss/apps/service/internal/app/shop/repositories"
 	shopusecases "github.com/reno1r/weiss/apps/service/internal/app/shop/usecases"
-	"github.com/reno1r/weiss/apps/service/internal/app/user/repositories"
+	userrepositories "github.com/reno1r/weiss/apps/service/internal/app/user/repositories"
+	userusecases "github.com/reno1r/weiss/apps/service/internal/app/user/usecases"
 	"github.com/reno1r/weiss/apps/service/internal/config"
 	"github.com/reno1r/weiss/apps/service/internal/http/handlers"
 )
@@ -101,7 +104,7 @@ func (s *Server) setupRoutes() {
 }
 
 func (s *Server) setupAuthRoutes() {
-	userRepo := repositories.NewUserRepository(s.db)
+	userRepo := userrepositories.NewUserRepository(s.db)
 
 	passwordService := services.NewPasswordService(s.config)
 	tokenService, err := services.NewTokenService(s.config)
@@ -122,6 +125,9 @@ func (s *Server) setupAuthRoutes() {
 
 func (s *Server) setupShopRoutes() {
 	shopRepo := shoprepositories.NewShopRepository(s.db)
+	staffRepo := accessrepositories.NewStaffRepository(s.db)
+	userRepo := userrepositories.NewUserRepository(s.db)
+	roleRepo := accessrepositories.NewRoleRepository(s.db)
 
 	listShopsUsecase := shopusecases.NewListShopsUsecase(shopRepo)
 	getShopUsecase := shopusecases.NewGetShopUsecase(shopRepo)
@@ -129,12 +135,21 @@ func (s *Server) setupShopRoutes() {
 	updateShopUsecase := shopusecases.NewUpdateShopUsecase(shopRepo)
 	deleteShopUsecase := shopusecases.NewDeleteShopUsecase(shopRepo)
 
+	getStaffsUsecase := accessusecases.NewGetStaffsUsecase(staffRepo)
+	assignStaffUsecase := accessusecases.NewAssignStaffUsecase(staffRepo)
+	getUserUsecase := userusecases.NewGetUserUsecase(userRepo)
+	getRoleUsecase := accessusecases.NewGetRoleUsecase(roleRepo)
+
 	shopHandler := handlers.NewShopHandler(
 		listShopsUsecase,
 		getShopUsecase,
 		createShopUsecase,
 		updateShopUsecase,
 		deleteShopUsecase,
+		getStaffsUsecase,
+		assignStaffUsecase,
+		getUserUsecase,
+		getRoleUsecase,
 	)
 
 	s.app.Get("/api/shops", shopHandler.ListShops)
@@ -142,6 +157,9 @@ func (s *Server) setupShopRoutes() {
 	s.app.Post("/api/shops", shopHandler.CreateShop)
 	s.app.Put("/api/shops/:id", shopHandler.UpdateShop)
 	s.app.Delete("/api/shops/:id", shopHandler.DeleteShop)
+
+	s.app.Get("/api/shops/:id/staffs", shopHandler.GetStaff)
+	s.app.Post("/api/shops/:id/staffs", shopHandler.AssignStaff)
 }
 
 func (s *Server) setupSwaggerRoutes() {

@@ -2,18 +2,25 @@ package handlers
 
 import (
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v3"
+	accessusecases "github.com/reno1r/weiss/apps/service/internal/app/access/usecases"
 	"github.com/reno1r/weiss/apps/service/internal/app/shop/usecases"
+	userusecases "github.com/reno1r/weiss/apps/service/internal/app/user/usecases"
 )
 
 type ShopHandler struct {
-	listShopsUsecase  *usecases.ListShopsUsecase
-	getShopUsecase    *usecases.GetShopUsecase
-	createShopUsecase *usecases.CreateShopUsecase
-	updateShopUsecase *usecases.UpdateShopUsecase
-	deleteShopUsecase *usecases.DeleteShopUsecase
+	listShopsUsecase   *usecases.ListShopsUsecase
+	getShopUsecase     *usecases.GetShopUsecase
+	createShopUsecase  *usecases.CreateShopUsecase
+	updateShopUsecase  *usecases.UpdateShopUsecase
+	deleteShopUsecase  *usecases.DeleteShopUsecase
+	getStaffsUsecase   *accessusecases.GetStaffsUsecase
+	assignStaffUsecase *accessusecases.AssignStaffUsecase
+	getUserUsecase     *userusecases.GetUserUsecase
+	getRoleUsecase     *accessusecases.GetRoleUsecase
 }
 
 func NewShopHandler(
@@ -22,13 +29,21 @@ func NewShopHandler(
 	createShopUsecase *usecases.CreateShopUsecase,
 	updateShopUsecase *usecases.UpdateShopUsecase,
 	deleteShopUsecase *usecases.DeleteShopUsecase,
+	getStaffsUsecase *accessusecases.GetStaffsUsecase,
+	assignStaffUsecase *accessusecases.AssignStaffUsecase,
+	getUserUsecase *userusecases.GetUserUsecase,
+	getRoleUsecase *accessusecases.GetRoleUsecase,
 ) *ShopHandler {
 	return &ShopHandler{
-		listShopsUsecase:  listShopsUsecase,
-		getShopUsecase:    getShopUsecase,
-		createShopUsecase: createShopUsecase,
-		updateShopUsecase: updateShopUsecase,
-		deleteShopUsecase: deleteShopUsecase,
+		listShopsUsecase:   listShopsUsecase,
+		getShopUsecase:     getShopUsecase,
+		createShopUsecase:  createShopUsecase,
+		updateShopUsecase:  updateShopUsecase,
+		deleteShopUsecase:  deleteShopUsecase,
+		getStaffsUsecase:   getStaffsUsecase,
+		assignStaffUsecase: assignStaffUsecase,
+		getUserUsecase:     getUserUsecase,
+		getRoleUsecase:     getRoleUsecase,
 	}
 }
 
@@ -269,6 +284,165 @@ func (h *ShopHandler) DeleteShop(c fiber.Ctx) error {
 	return c.Status(fiber.StatusNoContent).Send(nil)
 }
 
+// GetStaff godoc
+// @Summary      Get staff for a shop
+// @Description  Get all staff members assigned to a specific shop
+// @Tags         shops
+// @Accept       json
+// @Produce      json
+// @Param        id   path      int  true  "Shop ID"
+// @Success      200  {object}  StaffListResponse
+// @Failure      400  {object}  map[string]string  "Invalid shop id"
+// @Failure      404  {object}  map[string]string  "Shop not found"
+// @Failure      500  {object}  map[string]string  "Internal server error"
+// @Router       /shops/{id}/staffs [get]
+func (h *ShopHandler) GetStaff(c fiber.Ctx) error {
+	id, err := strconv.ParseUint(c.Params("id"), 10, 64)
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "invalid shop id")
+	}
+
+	// Get shop first to validate it exists
+	shopResult, err := h.getShopUsecase.Execute(id)
+	if err != nil {
+		if err.Error() == "shop not found" {
+			return fiber.NewError(fiber.StatusNotFound, "shop not found")
+		}
+		return fiber.NewError(fiber.StatusInternalServerError, "failed to get shop")
+	}
+
+	// Get staffs for the shop
+	result, err := h.getStaffsUsecase.Execute(accessusecases.GetStaffsParam{
+		Shop: shopResult.Shop,
+	})
+	if err != nil {
+		if isValidationError(err) {
+			return fiber.NewError(fiber.StatusUnprocessableEntity, err.Error())
+		}
+		return fiber.NewError(fiber.StatusInternalServerError, "failed to get staff")
+	}
+
+	staffs := make([]StaffResponseDTO, len(result.Staffs))
+	for i, staffInfo := range result.Staffs {
+		staffs[i] = StaffResponseDTO{
+			User: UserDTO{
+				ID:       staffInfo.User.ID,
+				FullName: staffInfo.User.FullName,
+				Phone:    staffInfo.User.Phone,
+				Email:    staffInfo.User.Email,
+			},
+			Role: RoleDTO{
+				ID:          staffInfo.Role.ID,
+				Name:        staffInfo.Role.Name,
+				Description: staffInfo.Role.Description,
+			},
+		}
+	}
+
+	return c.JSON(StaffListResponse{
+		Message: "staff retrieved successfully.",
+		Data: StaffListResponseData{
+			Staffs: staffs,
+		},
+	})
+}
+
+// AssignStaff godoc
+// @Summary      Assign staff to a shop
+// @Description  Assign a user with a role to a shop
+// @Tags         shops
+// @Accept       json
+// @Produce      json
+// @Param        id       path      int                true  "Shop ID"
+// @Param        request  body      AssignStaffPayload  true  "Staff assignment data"
+// @Success      201      {object}  StaffResponse
+// @Failure      400      {object}  map[string]string  "Invalid shop id or request body"
+// @Failure      404      {object}  map[string]string  "Shop, user, or role not found"
+// @Failure      409      {object}  map[string]string  "Staff already assigned"
+// @Failure      422      {object}  map[string]string  "Validation failed"
+// @Failure      500      {object}  map[string]string  "Internal server error"
+// @Router       /shops/{id}/staffs [post]
+func (h *ShopHandler) AssignStaff(c fiber.Ctx) error {
+	id, err := strconv.ParseUint(c.Params("id"), 10, 64)
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "invalid shop id")
+	}
+
+	var request AssignStaffPayload
+	if err := c.Bind().Body(&request); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "invalid request body")
+	}
+
+	// Get shop first to validate it exists
+	shopResult, err := h.getShopUsecase.Execute(id)
+	if err != nil {
+		if err.Error() == "shop not found" {
+			return fiber.NewError(fiber.StatusNotFound, "shop not found")
+		}
+		return fiber.NewError(fiber.StatusInternalServerError, "failed to get shop")
+	}
+
+	// Get user
+	userResult, err := h.getUserUsecase.Execute(request.UserID)
+	if err != nil {
+		if err.Error() == "user not found" {
+			return fiber.NewError(fiber.StatusNotFound, "user not found")
+		}
+		return fiber.NewError(fiber.StatusInternalServerError, "failed to get user")
+	}
+
+	// Get role
+	roleResult, err := h.getRoleUsecase.Execute(request.RoleID)
+	if err != nil {
+		if err.Error() == "role not found" {
+			return fiber.NewError(fiber.StatusNotFound, "role not found")
+		}
+		return fiber.NewError(fiber.StatusInternalServerError, "failed to get role")
+	}
+
+	// Validate role belongs to the shop
+	if roleResult.Role.ShopID != id {
+		return fiber.NewError(fiber.StatusBadRequest, "role does not belong to this shop")
+	}
+
+	// Assign staff
+	result, err := h.assignStaffUsecase.Execute(accessusecases.AssignStaffParam{
+		User: userResult.User,
+		Shop: shopResult.Shop,
+		Role: roleResult.Role,
+	})
+	if err != nil {
+		if isValidationError(err) {
+			return fiber.NewError(fiber.StatusUnprocessableEntity, err.Error())
+		}
+		if strings.Contains(err.Error(), "already assigned") {
+			return fiber.NewError(fiber.StatusConflict, err.Error())
+		}
+		return fiber.NewError(fiber.StatusInternalServerError, "failed to assign staff")
+	}
+
+	staffResponse := StaffResponseDTO{
+		User: UserDTO{
+			ID:       result.Staff.User.ID,
+			FullName: result.Staff.User.FullName,
+			Phone:    result.Staff.User.Phone,
+			Email:    result.Staff.User.Email,
+		},
+		Role: RoleDTO{
+			ID:          result.Staff.Role.ID,
+			Name:        result.Staff.Role.Name,
+			Description: result.Staff.Role.Description,
+		},
+	}
+
+	return c.Status(fiber.StatusCreated).JSON(StaffResponse{
+		Message: "staff assigned successfully.",
+		Data: StaffResponseData{
+			Staff: staffResponse,
+		},
+	})
+}
+
 type CreateShopPayload struct {
 	Name        string `json:"name" example:"My Shop" binding:"required"`                                // Shop name
 	Description string `json:"description" example:"A great shop for all your needs" binding:"required"` // Shop description
@@ -318,4 +492,45 @@ type ShopResponseDTO struct {
 	Logo        string    `json:"logo" example:"logo.png"`
 	CreatedAt   time.Time `json:"created_at" example:"2024-01-01T00:00:00Z"`
 	UpdatedAt   time.Time `json:"updated_at" example:"2024-01-01T00:00:00Z"`
+}
+
+type AssignStaffPayload struct {
+	UserID uint64 `json:"user_id" example:"1" binding:"required"` // User ID to assign
+	RoleID uint64 `json:"role_id" example:"1" binding:"required"` // Role ID to assign
+}
+
+type UserDTO struct {
+	ID       uint64 `json:"id" example:"1"`
+	FullName string `json:"full_name" example:"John Doe"`
+	Phone    string `json:"phone" example:"1234567890"`
+	Email    string `json:"email" example:"john@example.com"`
+}
+
+type RoleDTO struct {
+	ID          uint64 `json:"id" example:"1"`
+	Name        string `json:"name" example:"Manager"`
+	Description string `json:"description" example:"Manager role"`
+}
+
+type StaffResponseDTO struct {
+	User UserDTO `json:"user"`
+	Role RoleDTO `json:"role"`
+}
+
+type StaffListResponse struct {
+	Message string                `json:"message"`
+	Data    StaffListResponseData `json:"data"`
+}
+
+type StaffListResponseData struct {
+	Staffs []StaffResponseDTO `json:"staffs"`
+}
+
+type StaffResponse struct {
+	Message string            `json:"message"`
+	Data    StaffResponseData `json:"data"`
+}
+
+type StaffResponseData struct {
+	Staff StaffResponseDTO `json:"staff"`
 }
