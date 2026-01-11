@@ -18,6 +18,8 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
+	accessentities "github.com/reno1r/weiss/apps/service/internal/app/access/entities"
+	shopentities "github.com/reno1r/weiss/apps/service/internal/app/shop/entities"
 	"github.com/reno1r/weiss/apps/service/internal/app/user/entities"
 	"github.com/reno1r/weiss/apps/service/internal/config"
 	weisshttp "github.com/reno1r/weiss/apps/service/internal/http"
@@ -77,7 +79,12 @@ func SetupTestEnv(t *testing.T) *TestEnv {
 	require.NoError(t, err)
 
 	// Auto-migrate models
-	err = db.AutoMigrate(&entities.User{})
+	err = db.AutoMigrate(
+		&entities.User{},
+		&shopentities.Shop{},
+		&accessentities.Role{},
+		&accessentities.Staff{},
+	)
 	require.NoError(t, err)
 
 	// Create test config
@@ -94,10 +101,22 @@ func SetupTestEnv(t *testing.T) *TestEnv {
 		CorsAllowedOrigins: "*",
 	}
 
-	server := weisshttp.NewServer(cfg, db)
+	// Create test middleware to set user_id from X-Test-User-ID header
+	testMiddleware := func(c fiber.Ctx) error {
+		if userIDHeader := c.Get("X-Test-User-ID"); userIDHeader != "" {
+			var userID uint64
+			if _, err := fmt.Sscanf(userIDHeader, "%d", &userID); err == nil && userID > 0 {
+				c.Locals("user_id", userID)
+			}
+		}
+		return c.Next()
+	}
+
+	server := weisshttp.NewServerWithTestMiddleware(cfg, db, testMiddleware)
+	app := server.App()
 
 	return &TestEnv{
-		App:       server.App(),
+		App:       app,
 		DB:        db,
 		Container: pgContainer,
 		Ctx:       ctx,
@@ -122,7 +141,8 @@ func (e *TestEnv) CleanupDB(t *testing.T) {
 	if e.isLive || e.DB == nil {
 		return
 	}
-	err := e.DB.WithContext(e.Ctx).Exec("TRUNCATE TABLE users RESTART IDENTITY CASCADE").Error
+	// Truncate in order to respect foreign key constraints
+	err := e.DB.WithContext(e.Ctx).Exec("TRUNCATE TABLE staffs, roles, shops, users RESTART IDENTITY CASCADE").Error
 	require.NoError(t, err)
 }
 
@@ -146,6 +166,46 @@ func (e *TestEnv) doTestRequest(t *testing.T, method, path string, body io.Reade
 	req, err := http.NewRequest(method, path, body)
 	require.NoError(t, err)
 	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := e.App.Test(req, fiber.TestConfig{
+		Timeout: 10 * time.Second,
+	})
+	require.NoError(t, err)
+
+	respBody, err := io.ReadAll(resp.Body)
+	require.NoError(t, err)
+	resp.Body.Close()
+
+	return &Response{
+		StatusCode: resp.StatusCode,
+		Body:       respBody,
+	}
+}
+
+// RequestWithAuth makes an authenticated HTTP request to the API
+func (e *TestEnv) RequestWithAuth(t *testing.T, method, path string, body any, userID uint64) *Response {
+	var reqBody io.Reader
+	if body != nil {
+		jsonBytes, err := json.Marshal(body)
+		require.NoError(t, err)
+		reqBody = bytes.NewReader(jsonBytes)
+	}
+
+	if e.isLive {
+		return e.doLiveRequest(t, method, e.liveURL+path, reqBody)
+	}
+
+	return e.doTestRequestWithAuth(t, method, path, reqBody, userID)
+}
+
+func (e *TestEnv) doTestRequestWithAuth(t *testing.T, method, path string, body io.Reader, userID uint64) *Response {
+	req, err := http.NewRequest(method, path, body)
+	require.NoError(t, err)
+	req.Header.Set("Content-Type", "application/json")
+
+	if userID > 0 {
+		req.Header.Set("X-Test-User-ID", fmt.Sprintf("%d", userID))
+	}
 
 	resp, err := e.App.Test(req, fiber.TestConfig{
 		Timeout: 10 * time.Second,

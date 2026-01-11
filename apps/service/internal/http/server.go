@@ -38,6 +38,10 @@ type Server struct {
 }
 
 func NewServer(config *config.Config, db *gorm.DB) *Server {
+	return NewServerWithTestMiddleware(config, db, nil)
+}
+
+func NewServerWithTestMiddleware(config *config.Config, db *gorm.DB, testMiddleware fiber.Handler) *Server {
 	server := &Server{
 		app: fiber.New(fiber.Config{
 			AppName:         config.AppName,
@@ -60,13 +64,13 @@ func NewServer(config *config.Config, db *gorm.DB) *Server {
 		db:     db,
 	}
 
-	server.setupMiddleware()
+	server.setupMiddleware(testMiddleware)
 	server.setupRoutes()
 
 	return server
 }
 
-func (s *Server) setupMiddleware() {
+func (s *Server) setupMiddleware(testMiddleware fiber.Handler) {
 	s.app.Use(recover.New(recover.Config{
 		EnableStackTrace: s.config.AppDebug,
 	}))
@@ -86,6 +90,11 @@ func (s *Server) setupMiddleware() {
 	}))
 
 	s.app.Use(idempotency.New())
+
+	// Add test middleware if provided (for e2e tests)
+	if testMiddleware != nil {
+		s.app.Use(testMiddleware)
+	}
 }
 
 func (s *Server) setupRoutes() {
